@@ -1,0 +1,46 @@
+# Base downloader stage with common setup
+FROM ollama/ollama:latest AS base-downloader
+COPY <<EOF /init-models.sh
+#!/bin/bash
+set -e
+
+# Get model params
+original_model=\$1
+final_name=\$2
+
+# Start ollama in the background
+ollama serve &
+OLLAMA_PID=\$!
+sleep 10
+
+# Download and rename model
+echo "Downloading \$final_name ..."
+ollama pull \$original_model > /dev/null 2>&1 && \
+ollama cp \$original_model \$final_name && \
+ollama rm \$original_model
+
+# Cleanup
+kill \$OLLAMA_PID
+sleep 5
+EOF
+RUN chmod +x /init-models.sh
+
+# Separate stage for each model
+FROM base-downloader AS llama3-3b-downloader
+RUN /init-models.sh "llama3.2:3b-instruct-q8_0" "llama3:3b"
+
+FROM base-downloader AS hermes-3b-downloader
+RUN /init-models.sh "hermes3:3b-llama3.2-q8_0" "hermes3:3b"
+
+# Final image
+FROM ollama/ollama:latest
+
+# Add non-root user
+RUN groupadd -r -g 65532 ollama && \
+    useradd -r -m -u 65532 -g ollama ollama
+
+# Copy models from each builder
+COPY --chown=ollama:ollama --from=llama3-3b-downloader /root/.ollama/models /home/ollama/.ollama/models
+COPY --chown=ollama:ollama --from=hermes-3b-downloader /root/.ollama/models /home/ollama/.ollama/models
+
+USER 65532:65532

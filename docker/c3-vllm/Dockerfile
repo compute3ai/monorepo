@@ -1,0 +1,1 @@
+FROM ghcr.io/comput3ai/c3-vllm:latest
