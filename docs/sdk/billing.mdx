@@ -1,0 +1,55 @@
+---
+title: Billing
+description: SDK billing methods
+---
+
+## Get Balance
+
+```python
+from c3 import C3
+
+c3 = C3()
+balance = c3.billing.balance()
+
+print(f"Total: ${balance.total}")
+print(f"Available: ${balance.available}")
+print(f"Rewards: ${balance.rewards}")
+print(f"Paid: ${balance.paid}")
+```
+
+### Balance Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `total` | str | Total balance (USD) |
+| `available` | str | Available after reservations |
+| `rewards` | str | Rewards balance |
+| `paid` | str | Paid balance |
+
+## List Transactions
+
+```python
+transactions = c3.billing.transactions(limit=50, page=1)
+
+for tx in transactions:
+    print(f"{tx.transaction_type}: ${tx.amount_usd} ({tx.status})")
+```
+
+### Transaction Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | str | Transaction ID |
+| `amount` | int | Amount in smallest units |
+| `amount_usd` | float | Amount in USD |
+| `transaction_type` | str | `top_up`, `job`, `llm`, `refund`, etc. |
+| `status` | str | `PENDING`, `COMPLETED`, `FAILED` |
+| `rewards` | bool | Whether from rewards balance |
+| `job_id` | str | Associated job ID (if applicable) |
+| `created_at` | str | Timestamp |
+
+## Get Transaction
+
+```python
+tx = c3.billing.get_transaction("transaction_id")
+```

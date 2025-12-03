@@ -1,0 +1,70 @@
+---
+title: Regions
+description: Available datacenter regions
+---
+
+## List Regions
+
+```bash
+curl https://api.compute3.ai/instances/regions \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Available Regions
+
+### Europe
+
+| Code | Location | Flag |
+|------|----------|------|
+| se | Sweden | 🇸🇪 |
+| fi | Finland | 🇫🇮 |
+| is | Iceland | 🇮🇸 |
+| uk | United Kingdom | 🇬🇧 |
+
+### North America
+
+| Code | Location | Flag |
+|------|----------|------|
+| va | Virginia | 🇺🇸 |
+| oh | Ohio | 🇺🇸 |
+| or | Oregon | 🇺🇸 |
+| ga | Georgia | 🇺🇸 |
+
+### South America
+
+| Code | Location | Flag |
+|------|----------|------|
+| br | Brazil | 🇧🇷 |
+
+### Asia Pacific
+
+| Code | Location | Flag |
+|------|----------|------|
+| kr | South Korea | 🇰🇷 |
+
+### Middle East
+
+| Code | Location | Flag |
+|------|----------|------|
+| ae | United Arab Emirates | 🇦🇪 |
+
+## Region Selection
+
+Specify region when creating jobs:
+
+```bash
+# Create in Sweden
+c3 jobs create nvidia/cuda:12.0 -g l40s -r se -c "python train.py"
+
+# Create in Virginia
+c3 jobs create nvidia/cuda:12.0 -g h100 -r va -c "python train.py"
+```
+
+If no region specified, the system selects based on availability and pricing.
+
+## Region Considerations
+
+- **Latency**: Choose regions close to your data sources
+- **Availability**: GPU availability varies by region
+- **Pricing**: Some regions may have different pricing
+- **Data residency**: Consider compliance requirements

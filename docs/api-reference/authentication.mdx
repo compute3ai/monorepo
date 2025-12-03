@@ -1,0 +1,59 @@
+---
+title: Authentication
+description: API authentication methods
+---
+
+## API Key Authentication
+
+Use your API key as a Bearer token:
+
+```bash
+curl https://api.compute3.ai/api/balance \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Or via `X-API-KEY` header:
+
+```bash
+curl https://api.compute3.ai/api/balance \
+  -H "X-API-KEY: YOUR_API_KEY"
+```
+
+## Getting an API Key
+
+1. Sign up at [compute3.ai](https://compute3.ai)
+2. Go to [Dashboard](https://compute3.ai/dashboard)
+3. Create an API key
+
+## Managing Keys
+
+Create, list, and delete keys via the API:
+
+```bash
+# Create key
+curl -X POST https://api.compute3.ai/api/keys \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-key"}'
+
+# List keys
+curl https://api.compute3.ai/api/keys \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# Delete key
+curl -X DELETE https://api.compute3.ai/api/keys/{key_id} \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## LLM API Authentication
+
+The LLM API (`/v1/*` endpoints) uses the same API key but is OpenAI-compatible:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_C3_API_KEY",
+    base_url="https://api.compute3.ai/v1"
+)
+```

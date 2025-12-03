@@ -1,0 +1,55 @@
+---
+title: CLI Quickstart
+description: Get started with the Compute3 CLI
+---
+
+## Install
+
+```bash
+pip install c3-cli
+```
+
+## Configure
+
+```bash
+c3 configure
+```
+
+## Check Balance
+
+```bash
+c3 billing balance
+```
+
+## Chat with LLM
+
+```bash
+# One-shot
+c3 llm chat deepseek-v3.1 "Hello!"
+
+# Interactive
+c3 llm chat deepseek-v3.1
+```
+
+## Create GPU Job
+
+```bash
+# Basic job
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "nvidia-smi"
+
+# With live monitoring
+c3 jobs create nvidia/cuda:12.0 -g h100 -n 8 -c "torchrun train.py" -f
+```
+
+## Monitor Job
+
+```bash
+# Get logs
+c3 jobs logs <job_id>
+
+# Stream logs with TUI
+c3 jobs logs <job_id> -f
+
+# Watch GPU metrics
+c3 jobs metrics <job_id> -w
+```

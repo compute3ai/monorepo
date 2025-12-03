@@ -1,0 +1,41 @@
+---
+title: Quickstart
+description: Get started with Compute3
+---
+
+## 1. Install
+
+```bash
+pip install c3-sdk c3-cli
+```
+
+## 2. Configure
+
+```bash
+c3 configure
+```
+
+Or set environment variable:
+
+```bash
+export C3_API_KEY=your_key
+```
+
+## 3. Verify
+
+```bash
+c3 billing balance
+```
+
+## 4. Use
+
+```bash
+# Chat with LLM
+c3 llm chat deepseek-v3.1 "Hello!"
+
+# Launch GPU job
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "nvidia-smi"
+
+# Monitor with TUI
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "python train.py" -f
+```

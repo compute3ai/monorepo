@@ -1,0 +1,72 @@
+---
+title: Pricing
+description: GPU instance pricing
+---
+
+## Live Pricing
+
+Get current pricing via API:
+
+```bash
+curl https://api.compute3.ai/instances/pricing \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Or via CLI:
+
+```bash
+c3 billing gpus
+c3 billing gpus -o json
+```
+
+## Pricing Tiers
+
+### High-End GPUs
+
+Best for large-scale training and inference:
+
+| GPU | VRAM | Use Case |
+|-----|------|----------|
+| B300 | 260GB | Largest models, multi-node training |
+| B200 | 180GB | Large language models |
+| H200 | 140GB | High-memory workloads |
+| H100 | 80GB | Production inference, training |
+
+### Mid-Range GPUs
+
+Balanced performance and cost:
+
+| GPU | VRAM | Use Case |
+|-----|------|----------|
+| RTX PRO 6000 | 96GB | High-VRAM inference |
+| A100 80GB | 80GB | Training, fine-tuning |
+| A100 40GB | 40GB | Medium models |
+| L40S | 48GB | Inference, rendering |
+
+### Cost-Effective GPUs
+
+Budget-friendly options:
+
+| GPU | VRAM | Use Case |
+|-----|------|----------|
+| A6000 | 48GB | Development, testing |
+| L4 | 24GB | Small models, inference |
+| V100 | 32GB | Legacy workloads |
+
+## Spot vs On-Demand
+
+| Type | Availability | Cost |
+|------|--------------|------|
+| Spot | May be preempted | Lower |
+| On-demand | Guaranteed | Higher |
+
+```bash
+# Compare pricing
+c3 billing gpus
+```
+
+## Billing
+
+- Billed per second of GPU usage
+- Check balance: `c3 billing balance`
+- View history: `c3 billing history`

@@ -1,0 +1,88 @@
+---
+title: Pricing
+description: LLM API pricing
+---
+
+## Live Pricing
+
+Get current model pricing:
+
+```bash
+curl https://api.compute3.ai/llm/pricing \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Pricing Structure
+
+LLM API pricing is based on token usage:
+
+- **Input tokens**: Cost per token for prompts
+- **Output tokens**: Cost per token for completions
+
+Output tokens typically cost more than input tokens.
+
+## Model Groups
+
+### Free Models
+
+No cost for usage. Available to all users.
+
+### C3 Models
+
+Compute3's optimized deployments with competitive pricing.
+
+### External Models
+
+Third-party providers with pass-through pricing.
+
+## Checking Usage
+
+```bash
+# Check balance
+c3 billing balance
+
+# View transaction history
+c3 billing history
+```
+
+## Cost Optimization
+
+### Reduce Input Tokens
+
+- Use concise system prompts
+- Summarize conversation history
+- Remove unnecessary context
+
+### Reduce Output Tokens
+
+- Set appropriate `max_tokens`
+- Use clear, specific prompts
+- Request structured outputs
+
+### Choose Appropriate Models
+
+- Use smaller models for simple tasks
+- Reserve large models for complex reasoning
+- Test model performance for your use case
+
+## Example Cost Calculation
+
+```python
+# Approximate token counting
+def estimate_tokens(text):
+    # Rough estimate: 1 token ≈ 4 characters
+    return len(text) // 4
+
+prompt = "Explain quantum computing in simple terms."
+input_tokens = estimate_tokens(prompt)
+
+# Get actual usage from response
+response = client.chat.completions.create(
+    model="deepseek-v3.1",
+    messages=[{"role": "user", "content": prompt}]
+)
+
+print(f"Input tokens: {response.usage.prompt_tokens}")
+print(f"Output tokens: {response.usage.completion_tokens}")
+print(f"Total tokens: {response.usage.total_tokens}")
+```

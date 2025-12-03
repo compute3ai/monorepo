@@ -1,0 +1,51 @@
+---
+title: Python SDK
+description: c3-sdk Python package
+---
+
+## Install
+
+```bash
+pip install c3-sdk
+```
+
+## Usage
+
+```python
+from c3 import C3
+
+c3 = C3()  # Uses C3_API_KEY env var or ~/.c3/config
+
+# Billing
+balance = c3.billing.balance()
+transactions = c3.billing.transactions()
+
+# Jobs
+job = c3.jobs.create(image="nvidia/cuda:12.0", gpu_type="l40s", command="python train.py")
+jobs = c3.jobs.list()
+logs = c3.jobs.logs(job.job_id)
+metrics = c3.jobs.metrics(job.job_id)
+
+# User
+user = c3.user.get()
+```
+
+## Authentication
+
+Three options (in priority order):
+
+1. **Environment variable**: `export C3_API_KEY=your_key`
+2. **Config file**: `~/.c3/config` with `C3_API_KEY=your_key`
+3. **Direct**: `C3(api_key="your_key")`
+
+## Error Handling
+
+```python
+from c3 import C3, APIError
+
+try:
+    c3 = C3()
+    balance = c3.billing.balance()
+except APIError as e:
+    print(f"Error {e.status_code}: {e.detail}")
+```

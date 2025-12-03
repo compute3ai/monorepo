@@ -1,0 +1,80 @@
+---
+title: LLM API
+description: OpenAI-compatible LLM inference API
+---
+
+## Overview
+
+Compute3 provides an OpenAI-compatible API for LLM inference at `https://api.compute3.ai/v1`.
+
+## Quick Start
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_C3_API_KEY",
+    base_url="https://api.compute3.ai/v1"
+)
+
+response = client.chat.completions.create(
+    model="deepseek-v3.1",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+print(response.choices[0].message.content)
+```
+
+Or via CLI:
+
+```bash
+c3 llm chat deepseek-v3.1 "Hello!"
+```
+
+## Available Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /v1/models` | List available models |
+| `POST /v1/chat/completions` | Chat completions |
+| `GET /llm/models` | Model details |
+| `GET /llm/pricing` | Model pricing |
+| `GET /llm/tiers` | Access tiers |
+| `GET /llm/groups` | Model groups |
+
+## Model Groups
+
+### Free Models
+
+Available to all users at no cost.
+
+### C3 Models
+
+Compute3's optimized model deployments.
+
+### External Models
+
+Third-party model providers.
+
+## Access Tiers
+
+| Tier | Access |
+|------|--------|
+| Free | Basic access to free models |
+| Rewards | Earned through platform usage |
+| Paid | Full access to all models |
+
+## CLI Commands
+
+```bash
+# List models
+c3 llm models
+
+# One-shot chat
+c3 llm chat deepseek-v3.1 "Explain quantum computing"
+
+# Interactive chat
+c3 llm chat deepseek-v3.1
+
+# With system prompt
+c3 llm chat deepseek-v3.1 "Write a haiku" -s "You are a poet"
+```

@@ -1,0 +1,67 @@
+---
+title: Compute3
+description: GPU orchestration and LLM API platform
+---
+
+Compute3 provides GPU infrastructure for running containerized workloads and accessing LLM APIs.
+
+## Install
+
+```bash
+pip install c3-sdk c3-cli
+```
+
+## Configure
+
+```bash
+c3 configure
+# or
+export C3_API_KEY=your_key
+```
+
+Get your API key at [compute3.ai/dashboard](https://compute3.ai/dashboard).
+
+## Quick Examples
+
+### Python SDK
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+# Check balance
+balance = c3.billing.balance()
+print(f"${balance.total}")
+
+# Create GPU job
+job = c3.jobs.create(
+    image="nvidia/cuda:12.0",
+    gpu_type="l40s",
+    command="python train.py"
+)
+```
+
+### CLI
+
+```bash
+c3 billing balance
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "python train.py" -f
+c3 llm chat deepseek-v3.1 "Hello!"
+```
+
+### LLM API (OpenAI Compatible)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="your_c3_api_key",
+    base_url="https://api.compute3.ai/v1"
+)
+
+response = client.chat.completions.create(
+    model="deepseek-v3.1",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```

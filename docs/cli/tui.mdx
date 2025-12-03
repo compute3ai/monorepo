@@ -1,0 +1,42 @@
+---
+title: TUI
+description: Terminal UI features
+---
+
+The CLI includes a Textual-based TUI for monitoring jobs.
+
+## Job Monitor
+
+Launch with `-f` flag on create or logs:
+
+```bash
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "python train.py" -f
+c3 jobs logs <job_id> -f
+```
+
+### Features
+
+- **Job Info Panel**: State, GPU type, region, price, hostname
+- **GPU Metrics**: Real-time utilization bars, VRAM, temperature, power
+- **Live Logs**: Streaming container logs
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `q` | Quit |
+| `c` | Cancel job |
+
+## Metrics Watch
+
+Watch GPU metrics live:
+
+```bash
+c3 jobs metrics <job_id> -w
+```
+
+Displays:
+- GPU utilization with progress bars
+- VRAM usage
+- Temperature (color-coded: green/yellow/red)
+- Power draw

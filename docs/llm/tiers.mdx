@@ -1,0 +1,85 @@
+---
+title: Access Tiers
+description: LLM API access tiers and model groups
+---
+
+## Tiers
+
+Get tier information:
+
+```bash
+curl https://api.compute3.ai/llm/tiers \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### Free Tier
+
+- Access to free models
+- No credit card required
+- Rate limits apply
+
+### Rewards Tier
+
+- Earned through platform usage
+- Access to additional models
+- Higher rate limits
+
+### Paid Tier
+
+- Full access to all models
+- Highest rate limits
+- Priority support
+
+## Model Groups
+
+Get group information:
+
+```bash
+curl https://api.compute3.ai/llm/groups \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+### free-models
+
+Models available at no cost:
+
+- Community models
+- Open-source deployments
+- Basic capabilities
+
+### c3-models
+
+Compute3's optimized model deployments:
+
+- Optimized for performance
+- Competitive pricing
+- Reliable availability
+
+### external-models
+
+Third-party model providers:
+
+- Premium models
+- Specialized capabilities
+- Pass-through pricing
+
+## Checking Your Tier
+
+View your current tier and access:
+
+```bash
+c3 user
+c3 user -o json
+```
+
+## Rate Limits
+
+Rate limits vary by tier:
+
+| Tier | Requests/min | Tokens/min |
+|------|--------------|------------|
+| Free | Lower | Lower |
+| Rewards | Medium | Medium |
+| Paid | Higher | Higher |
+
+If you hit rate limits, wait and retry or upgrade your tier.

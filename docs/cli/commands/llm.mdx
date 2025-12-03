@@ -1,0 +1,58 @@
+---
+title: c3 llm
+description: LLM API commands
+---
+
+Uses the OpenAI-compatible API at `https://api.compute3.ai/v1`.
+
+## models
+
+List available models.
+
+```bash
+c3 llm models
+c3 llm models -o json
+```
+
+## chat
+
+Chat completion.
+
+```bash
+# One-shot
+c3 llm chat <model> "<prompt>"
+c3 llm chat deepseek-v3.1 "Explain quantum computing"
+
+# With system prompt
+c3 llm chat deepseek-v3.1 "Write a haiku" -s "You are a poet"
+
+# Interactive mode (omit prompt)
+c3 llm chat deepseek-v3.1
+```
+
+**Arguments:**
+- `model` - Model name (required)
+- `prompt` - User prompt (omit for interactive mode)
+
+**Options:**
+- `-s, --system` - System message
+- `-m, --max-tokens` - Max tokens (default: 4096)
+- `-t, --temperature` - Temperature (default: 0.7)
+- `--no-stream` - Disable streaming
+- `-o, --output` - Output format: `text` or `json`
+
+### Interactive Mode
+
+When you omit the prompt, the CLI enters interactive chat mode:
+
+```bash
+c3 llm chat deepseek-v3.1
+
+C3 Chat - Model: deepseek-v3.1
+Type 'exit' or Ctrl+C to quit
+
+You: Hello!
+Assistant: Hi! How can I help you today?
+
+You: exit
+```

@@ -1,0 +1,93 @@
+---
+title: Models
+description: Available LLM models
+---
+
+## List Models
+
+```bash
+curl https://api.compute3.ai/v1/models \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Or via CLI:
+
+```bash
+c3 llm models
+c3 llm models -o json
+```
+
+## Model Details
+
+Get detailed model information:
+
+```bash
+curl https://api.compute3.ai/llm/models \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Using Models
+
+### Python (OpenAI SDK)
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_C3_API_KEY",
+    base_url="https://api.compute3.ai/v1"
+)
+
+# Chat completion
+response = client.chat.completions.create(
+    model="deepseek-v3.1",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the capital of France?"}
+    ],
+    max_tokens=1024,
+    temperature=0.7
+)
+
+print(response.choices[0].message.content)
+```
+
+### Streaming
+
+```python
+stream = client.chat.completions.create(
+    model="deepseek-v3.1",
+    messages=[{"role": "user", "content": "Tell me a story"}],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+```
+
+### CLI
+
+```bash
+# One-shot
+c3 llm chat deepseek-v3.1 "What is 2+2?"
+
+# With options
+c3 llm chat deepseek-v3.1 "Write code" -m 2048 -t 0.5
+
+# Disable streaming
+c3 llm chat deepseek-v3.1 "Hello" --no-stream
+
+# Interactive mode
+c3 llm chat deepseek-v3.1
+```
+
+## Model Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `model` | Model ID | Required |
+| `messages` | Conversation messages | Required |
+| `max_tokens` | Maximum response tokens | 4096 |
+| `temperature` | Randomness (0-2) | 0.7 |
+| `stream` | Stream response | true |

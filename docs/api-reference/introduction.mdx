@@ -1,0 +1,70 @@
+---
+title: API Reference
+description: Compute3 REST API
+---
+
+Base URL: `https://api.compute3.ai`
+
+## Authentication
+
+All endpoints require authentication via Bearer token (API key):
+
+```bash
+curl https://api.compute3.ai/api/balance \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Get your API key at [compute3.ai/dashboard](https://compute3.ai/dashboard).
+
+## Endpoints
+
+### Billing
+- `GET /api/balance` - Get account balance
+- `GET /api/tx` - List transactions
+- `GET /api/tx/{id}` - Get transaction
+- `GET /api/invoices` - List invoices
+- `GET /api/invoices/{id}` - Get invoice
+
+### Jobs
+- `POST /api/jobs` - Create job
+- `GET /api/jobs` - List jobs
+- `GET /api/jobs/{id}` - Get job
+- `PATCH /api/jobs/{id}` - Extend runtime
+- `DELETE /api/jobs/{id}` - Cancel job
+- `GET /api/jobs/{id}/logs` - Get logs
+- `GET /api/jobs/{id}/metrics` - Get GPU metrics
+- `GET /api/jobs/{id}/token` - Get auth token
+
+### User
+- `GET /api/user` - Get user
+- `PATCH /api/user` - Update user
+
+### API Keys
+- `POST /api/keys` - Create key
+- `GET /api/keys` - List keys
+- `GET /api/keys/{id}` - Get key
+- `PATCH /api/keys/{id}` - Update key
+- `DELETE /api/keys/{id}` - Delete key
+
+### LLM (OpenAI Compatible)
+- `GET /v1/models` - List models
+- `POST /v1/chat/completions` - Chat completion
+
+## Errors
+
+Standard HTTP status codes. Error responses include:
+
+```json
+{
+  "detail": "Error message"
+}
+```
+
+| Status | Description |
+|--------|-------------|
+| 400 | Bad request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not found |
+| 422 | Validation error |
+| 500 | Server error |

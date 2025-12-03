@@ -1,0 +1,127 @@
+---
+title: Jobs
+description: SDK jobs methods
+---
+
+## Create Job
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+job = c3.jobs.create(
+    image="nvidia/cuda:12.0",
+    command="python train.py",
+    gpu_type="l40s",        # l40s, h100, a100, etc.
+    gpu_count=1,
+    region=None,            # optional: us-east-1, etc.
+    runtime=None,           # optional: max seconds
+    interruptible=True,     # spot instance
+    env={"KEY": "value"},   # optional
+    ports={"http": 8080},   # optional
+)
+
+print(f"Job: {job.job_id}")
+print(f"State: {job.state}")
+print(f"Price: ${job.price_per_hour}/hr")
+```
+
+### Create Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `image` | str | required | Docker image |
+| `command` | str | None | Command to run |
+| `gpu_type` | str | "l40s" | GPU type |
+| `gpu_count` | int | 1 | Number of GPUs |
+| `region` | str | None | Region code |
+| `runtime` | int | None | Max runtime (seconds) |
+| `interruptible` | bool | True | Use spot instances |
+| `env` | dict | None | Environment variables |
+| `ports` | dict | None | Port mappings |
+
+## List Jobs
+
+```python
+jobs = c3.jobs.list()
+jobs = c3.jobs.list(state="running")
+
+for job in jobs:
+    print(f"{job.job_id}: {job.state}")
+```
+
+## Get Job
+
+```python
+job = c3.jobs.get("job_id")
+```
+
+### Job Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `job_id` | str | Job ID |
+| `job_key` | str | Job key |
+| `state` | str | `pending`, `running`, `succeeded`, `failed`, `canceled` |
+| `gpu_type` | str | GPU type |
+| `gpu_count` | int | Number of GPUs |
+| `region` | str | Region |
+| `hostname` | str | Assigned hostname |
+| `price_per_hour` | float | Price per hour |
+| `price_per_second` | float | Price per second |
+| `docker_image` | str | Docker image |
+| `runtime` | int | Max runtime |
+| `created_at` | float | Created timestamp |
+| `started_at` | float | Started timestamp |
+| `completed_at` | float | Completed timestamp |
+
+## Get Logs
+
+```python
+logs = c3.jobs.logs("job_id")
+print(logs)
+```
+
+## Get Metrics
+
+```python
+metrics = c3.jobs.metrics("job_id")
+
+for gpu in metrics.gpus:
+    print(f"GPU {gpu.index}: {gpu.utilization}%")
+    print(f"  VRAM: {gpu.memory_used/1024:.1f}/{gpu.memory_total/1024:.1f} GB")
+    print(f"  Temp: {gpu.temperature}C")
+    print(f"  Power: {gpu.power_draw}W")
+```
+
+### GPUMetrics Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `index` | int | GPU index |
+| `utilization` | float | GPU utilization % |
+| `memory_used` | float | VRAM used (MB) |
+| `memory_total` | float | VRAM total (MB) |
+| `temperature` | int | Temperature (C) |
+| `power_draw` | float | Power draw (W) |
+
+## Extend Runtime
+
+```python
+job = c3.jobs.extend("job_id", runtime=7200)
+```
+
+## Cancel Job
+
+```python
+c3.jobs.cancel("job_id")
+```
+
+## Get Job Token
+
+For auth-enabled jobs:
+
+```python
+token = c3.jobs.token("job_id")
+```

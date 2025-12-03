@@ -1,0 +1,32 @@
+---
+title: c3 billing
+description: Billing commands
+---
+
+## balance
+
+Get account balance.
+
+```bash
+c3 billing balance
+c3 billing balance -o json
+```
+
+**Options:**
+- `-o, --output` - Output format: `table` (default) or `json`
+
+## transactions
+
+List transactions.
+
+```bash
+c3 billing transactions
+c3 billing transactions -n 50
+c3 billing transactions -p 2
+c3 billing transactions -o json
+```
+
+**Options:**
+- `-n, --limit` - Number of transactions (default: 20)
+- `-p, --page` - Page number (default: 1)
+- `-o, --output` - Output format: `table` or `json`

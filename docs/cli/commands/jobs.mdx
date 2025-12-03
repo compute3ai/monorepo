@@ -1,0 +1,97 @@
+---
+title: c3 jobs
+description: Job management commands
+---
+
+## list
+
+List jobs.
+
+```bash
+c3 jobs list
+c3 jobs list -s running
+c3 jobs list -o json
+```
+
+**Options:**
+- `-s, --state` - Filter by state: `pending`, `running`, `succeeded`, `failed`, `canceled`
+- `-o, --output` - Output format: `table` or `json`
+
+## create
+
+Create a GPU job.
+
+```bash
+c3 jobs create <image> [options]
+
+# Examples
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "python train.py"
+c3 jobs create nvidia/cuda:12.0 -g h100 -n 8 -c "torchrun train.py" -f
+c3 jobs create myimage -e HF_TOKEN=xxx -p http:8080
+```
+
+**Arguments:**
+- `image` - Docker image (required)
+
+**Options:**
+- `-g, --gpu` - GPU type: `l40s`, `h100`, `a100`, etc. (default: l40s)
+- `-n, --count` - Number of GPUs (default: 1)
+- `-c, --command` - Command to run
+- `-r, --region` - Region code
+- `-t, --runtime` - Max runtime in seconds
+- `--spot/--on-demand` - Use spot instances (default: spot)
+- `-e, --env` - Environment variables (KEY=VALUE), can repeat
+- `-p, --port` - Port mappings (name:port), can repeat
+- `-f, --follow` - Launch TUI monitor after creation
+- `-o, --output` - Output format: `table` or `json`
+
+## get
+
+Get job details.
+
+```bash
+c3 jobs get <job_id>
+c3 jobs get <job_id> -o json
+```
+
+## logs
+
+Get job logs.
+
+```bash
+c3 jobs logs <job_id>
+c3 jobs logs <job_id> -f   # Stream with TUI
+```
+
+**Options:**
+- `-f, --follow` - Stream logs with TUI
+
+## metrics
+
+Get GPU metrics.
+
+```bash
+c3 jobs metrics <job_id>
+c3 jobs metrics <job_id> -w   # Watch live
+c3 jobs metrics <job_id> -o json
+```
+
+**Options:**
+- `-w, --watch` - Watch metrics live
+- `-o, --output` - Output format: `table` or `json`
+
+## cancel
+
+Cancel a job.
+
+```bash
+c3 jobs cancel <job_id>
+```
+
+## extend
+
+Extend job runtime.
+
+```bash
+c3 jobs extend <job_id> <seconds>
+```

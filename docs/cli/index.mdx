@@ -1,0 +1,48 @@
+---
+title: CLI
+description: c3-cli command-line interface
+---
+
+## Install
+
+```bash
+pip install c3-cli
+```
+
+## Configure
+
+```bash
+c3 configure
+```
+
+Or set environment variable:
+
+```bash
+export C3_API_KEY=your_key
+```
+
+## Commands
+
+```bash
+c3 --help
+
+c3 configure              # Set up API key
+c3 billing balance        # Check balance
+c3 billing transactions   # List transactions
+c3 jobs list              # List jobs
+c3 jobs create            # Create job
+c3 jobs logs              # Get logs
+c3 jobs metrics           # Get GPU metrics
+c3 llm models             # List LLM models
+c3 llm chat               # Chat with LLM
+c3 user                   # Get user info
+```
+
+## Output Formats
+
+Most commands support `-o json` for JSON output:
+
+```bash
+c3 billing balance -o json
+c3 jobs list -o json
+```

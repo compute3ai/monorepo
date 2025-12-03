@@ -1,0 +1,69 @@
+---
+title: GPU Instances
+description: Run GPU workloads on Compute3
+---
+
+## Overview
+
+Compute3 provides on-demand and spot GPU instances across multiple regions worldwide.
+
+## Quick Start
+
+```bash
+# Create a job with L40S GPU
+c3 jobs create nvidia/cuda:12.0 -g l40s -c "python train.py"
+
+# Create with H100 GPU
+c3 jobs create nvidia/cuda:12.0 -g h100 -c "torchrun --nproc_per_node=8 train.py" -n 8
+```
+
+## Instance Types
+
+| GPU | VRAM | Architecture | Tier |
+|-----|------|--------------|------|
+| B300 | 260GB HBM3e | Blackwell | High-end |
+| B200 | 180GB HBM3e | Blackwell | High-end |
+| H200 | 140GB HBM3e | Hopper | High-end |
+| H100 | 80GB HBM3 | Hopper | High-end |
+| RTX PRO 6000 | 96GB GDDR7 | Blackwell | Mid-range |
+| A100 80GB | 80GB HBM2e | Ampere | Mid-range |
+| A100 40GB | 40GB HBM2e | Ampere | Mid-range |
+| L40S | 48GB GDDR6 | Ada Lovelace | Mid-range |
+| A6000 | 48GB GDDR6 | Ampere | Cost-effective |
+| L4 | 24GB GDDR6 | Ada Lovelace | Cost-effective |
+| V100 | 32GB HBM2 | Volta | Cost-effective |
+
+## Regions
+
+| Code | Location |
+|------|----------|
+| se | Sweden 🇸🇪 |
+| fi | Finland 🇫🇮 |
+| is | Iceland 🇮🇸 |
+| va | Virginia, US 🇺🇸 |
+| oh | Ohio, US 🇺🇸 |
+| or | Oregon, US 🇺🇸 |
+| ga | Georgia, US 🇺🇸 |
+| br | Brazil 🇧🇷 |
+| kr | South Korea 🇰🇷 |
+| ae | UAE 🇦🇪 |
+| uk | United Kingdom 🇬🇧 |
+
+## Pricing Model
+
+- **Spot instances** (default): Lower cost, may be preempted
+- **On-demand instances**: Higher cost, guaranteed availability
+
+```bash
+# Spot (default)
+c3 jobs create nvidia/cuda:12.0 -g l40s --spot
+
+# On-demand
+c3 jobs create nvidia/cuda:12.0 -g l40s --on-demand
+```
+
+## API Endpoints
+
+- `GET /instances/pricing` - Current GPU pricing
+- `GET /instances/types` - Available GPU types
+- `GET /instances/regions` - Available regions

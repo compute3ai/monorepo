@@ -1,0 +1,111 @@
+---
+title: GPU Types
+description: Available GPU types and specifications
+---
+
+## List GPU Types
+
+```bash
+curl https://api.compute3.ai/instances/types \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Blackwell Architecture
+
+Latest generation NVIDIA GPUs.
+
+### B300
+
+- **VRAM**: 260GB HBM3e
+- **Tier**: High-end
+- **Use cases**: Largest foundation models, distributed training
+
+### B200
+
+- **VRAM**: 180GB HBM3e
+- **Tier**: High-end
+- **Use cases**: Large language models, high-throughput inference
+
+### RTX PRO 6000
+
+- **VRAM**: 96GB GDDR7
+- **Tier**: Mid-range
+- **Use cases**: High-VRAM inference, rendering
+
+## Hopper Architecture
+
+High-performance datacenter GPUs.
+
+### H200
+
+- **VRAM**: 140GB HBM3e
+- **Tier**: High-end
+- **Use cases**: Large models requiring high memory bandwidth
+
+### H100
+
+- **VRAM**: 80GB HBM3
+- **Tier**: High-end
+- **Use cases**: Production training and inference, FP8 support
+
+## Ampere Architecture
+
+Widely deployed datacenter GPUs.
+
+### A100 80GB
+
+- **VRAM**: 80GB HBM2e
+- **Tier**: Mid-range
+- **Use cases**: Training, fine-tuning, high-memory inference
+
+### A100 40GB
+
+- **VRAM**: 40GB HBM2e
+- **Tier**: Mid-range
+- **Use cases**: Medium-sized models, development
+
+### A6000
+
+- **VRAM**: 48GB GDDR6
+- **Tier**: Cost-effective
+- **Use cases**: Development, testing, rendering
+
+## Ada Lovelace Architecture
+
+Efficient inference-optimized GPUs.
+
+### L40S
+
+- **VRAM**: 48GB GDDR6
+- **Tier**: Mid-range
+- **Use cases**: Inference, video processing, rendering
+
+### L4
+
+- **VRAM**: 24GB GDDR6
+- **Tier**: Cost-effective
+- **Use cases**: Small model inference, cost-sensitive workloads
+
+### RTX 6000 Ada
+
+- **VRAM**: 48GB GDDR6
+- **Tier**: Mid-range
+- **Use cases**: Professional graphics, inference
+
+## Volta Architecture
+
+### V100
+
+- **VRAM**: 32GB HBM2
+- **Tier**: Cost-effective
+- **Use cases**: Legacy workloads, budget training
+
+## Selecting a GPU
+
+```bash
+# List available GPUs with pricing
+c3 billing gpus
+
+# Create job with specific GPU
+c3 jobs create nvidia/cuda:12.0 -g h100 -c "python train.py"
+```

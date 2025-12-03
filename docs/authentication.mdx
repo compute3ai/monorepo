@@ -1,0 +1,104 @@
+---
+title: Authentication
+description: Configure API key authentication for Compute3
+---
+
+# Authentication
+
+Compute3 uses API keys for authentication. You can get your API key from the [dashboard](https://compute3.ai/dashboard).
+
+## Authentication Methods
+
+There are three ways to provide your API key:
+
+### 1. Environment Variable (Recommended)
+
+Set the `C3_API_KEY` environment variable:
+
+```bash
+export C3_API_KEY=your_api_key_here
+```
+
+Add this to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist across sessions.
+
+### 2. Configuration File
+
+Create a config file at `~/.c3/config`:
+
+```bash
+mkdir -p ~/.c3
+echo "C3_API_KEY=your_api_key_here" > ~/.c3/config
+chmod 600 ~/.c3/config
+```
+
+Or use the CLI configure command:
+
+```bash
+c3 configure
+```
+
+### 3. Pass Directly (SDK Only)
+
+Pass the API key directly to the SDK constructor:
+
+```python
+from c3 import C3
+
+c3 = C3(api_key="your_api_key_here")
+```
+
+<Warning>
+Avoid hardcoding API keys in source code. Use environment variables or config files instead.
+</Warning>
+
+## Priority Order
+
+When multiple authentication methods are configured, the priority is:
+
+1. Environment variable (`C3_API_KEY`)
+2. Config file (`~/.c3/config`)
+3. Direct parameter (SDK only)
+
+## Config File Format
+
+The config file uses a simple key-value format:
+
+```
+C3_API_KEY=your_api_key
+C3_API_URL=https://api.compute3.ai
+```
+
+Supported configuration options:
+
+| Key | Description | Default |
+|-----|-------------|---------|
+| `C3_API_KEY` | Your API key | (required) |
+| `C3_API_URL` | API base URL | `https://api.compute3.ai` |
+
+## API Key Security
+
+<Info>
+Your API key provides full access to your Compute3 account. Keep it secure.
+</Info>
+
+Best practices:
+
+- Never commit API keys to version control
+- Use environment variables in production
+- Rotate keys periodically via the dashboard
+- Use separate keys for different environments
+
+## Managing API Keys
+
+You can create, list, and delete API keys via the API:
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+# API key management is available through the REST API
+# See API Reference for details
+```
+
+Or use the [dashboard](https://compute3.ai/dashboard) to manage your keys.

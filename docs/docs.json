@@ -1,0 +1,199 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Compute3.AI",
+  "colors": {
+    "primary": "#16A34A",
+    "light": "#07C983",
+    "dark": "#15803D"
+  },
+  "favicon": "/favicon.svg",
+  "openapi": "openapi.json",
+  "api": {
+    "baseUrl": "https://api.compute3.ai",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "index",
+              "quickstart",
+              "authentication"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Instances",
+        "groups": [
+          {
+            "group": "GPU Instances",
+            "pages": [
+              "instances/index",
+              "instances/pricing",
+              "instances/types",
+              "instances/regions"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "LLM",
+        "groups": [
+          {
+            "group": "LLM API",
+            "pages": [
+              "llm/index",
+              "llm/models",
+              "llm/pricing",
+              "llm/tiers"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK",
+        "groups": [
+          {
+            "group": "Python SDK",
+            "pages": [
+              "sdk/index",
+              "sdk/billing",
+              "sdk/jobs",
+              "sdk/reference"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI",
+        "groups": [
+          {
+            "group": "CLI",
+            "pages": [
+              "cli/index",
+              "cli/quickstart",
+              "cli/configuration"
+            ]
+          },
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/commands/billing",
+              "cli/commands/jobs",
+              "cli/commands/llm",
+              "cli/commands/user"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "cli/tui"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Billing",
+            "openapi": "openapi.json",
+            "pages": [
+              "GET /api/balance",
+              "GET /api/tx",
+              "GET /api/tx/{transaction_id}",
+              "GET /api/invoices",
+              "GET /api/invoices/{invoice_uuid}"
+            ]
+          },
+          {
+            "group": "Jobs",
+            "openapi": "openapi.json",
+            "pages": [
+              "POST /api/jobs",
+              "GET /api/jobs",
+              "GET /api/jobs/{job_id}",
+              "PATCH /api/jobs/{job_id}",
+              "DELETE /api/jobs/{job_id}",
+              "GET /api/jobs/{job_id}/logs",
+              "GET /api/jobs/{job_id}/metrics",
+              "GET /api/jobs/{job_id}/token"
+            ]
+          },
+          {
+            "group": "User",
+            "openapi": "openapi.json",
+            "pages": [
+              "GET /api/user",
+              "PATCH /api/user"
+            ]
+          },
+          {
+            "group": "API Keys",
+            "openapi": "openapi.json",
+            "pages": [
+              "POST /api/keys",
+              "GET /api/keys",
+              "GET /api/keys/{key_id}",
+              "PATCH /api/keys/{key_id}",
+              "DELETE /api/keys/{key_id}"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Dashboard",
+          "href": "https://compute3.ai/dashboard",
+          "icon": "gauge"
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/compute3ai",
+          "icon": "github"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:support@compute3.ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://compute3.ai/dashboard"
+    }
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/compute3ai",
+      "github": "https://github.com/compute3ai"
+    }
+  }
+}

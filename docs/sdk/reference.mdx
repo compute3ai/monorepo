@@ -1,0 +1,85 @@
+---
+title: Reference
+description: SDK API reference
+---
+
+## C3
+
+Main client class.
+
+```python
+from c3 import C3
+
+c3 = C3(api_key=None, api_url=None)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `api_key` | str | None | API key (uses env/config if not provided) |
+| `api_url` | str | None | API URL (default: https://api.compute3.ai) |
+
+### Properties
+
+- `c3.billing` - Billing API
+- `c3.jobs` - Jobs API
+- `c3.user` - User API
+- `c3.api_url` - Base API URL
+
+## Billing
+
+```python
+c3.billing.balance() -> Balance
+c3.billing.transactions(limit=50, page=1) -> list[Transaction]
+c3.billing.get_transaction(transaction_id) -> Transaction
+```
+
+## Jobs
+
+```python
+c3.jobs.create(...) -> Job
+c3.jobs.list(state=None) -> list[Job]
+c3.jobs.get(job_id) -> Job
+c3.jobs.logs(job_id) -> str
+c3.jobs.metrics(job_id) -> JobMetrics
+c3.jobs.extend(job_id, runtime) -> Job
+c3.jobs.cancel(job_id) -> dict
+c3.jobs.token(job_id) -> str
+```
+
+## User
+
+```python
+c3.user.get() -> User
+```
+
+### User Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user_id` | str | User ID |
+| `email` | str | Email address |
+| `name` | str | Display name |
+| `is_active` | bool | Account active |
+| `created_at` | str | Created timestamp |
+
+## APIError
+
+Exception raised on API errors.
+
+```python
+from c3 import APIError
+
+try:
+    c3.jobs.get("invalid")
+except APIError as e:
+    print(e.status_code)  # HTTP status code
+    print(e.detail)       # Error message
+```
+
+## Configuration
+
+```python
+from c3 import configure
+
+configure(api_key="your_key", api_url=None)  # Saves to ~/.c3/config
+```

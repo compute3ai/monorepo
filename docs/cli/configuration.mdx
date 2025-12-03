@@ -1,0 +1,34 @@
+---
+title: Configuration
+description: Configure the Compute3 CLI
+---
+
+## Interactive Setup
+
+```bash
+c3 configure
+```
+
+This prompts for your API key and saves it to `~/.c3/config`.
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `C3_API_KEY` | Your API key |
+| `C3_API_URL` | API URL (default: https://api.compute3.ai) |
+
+## Config File
+
+Location: `~/.c3/config`
+
+Format:
+```
+C3_API_KEY=your_key
+C3_API_URL=https://api.compute3.ai
+```
+
+## Priority
+
+1. Environment variables
+2. Config file
