@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@source "../../../packages/shared-ui/src/**/*.{ts,tsx}";
+
+/* Custom Properties */
+:root {
+  --color-primary: #ff6b35;
+  --color-secondary: #f7931e;
+  --color-text: #1a1a1a;
+  --color-bg-light: #f8f9fa;
+  --color-bg-dark: #1f2937;
+  --gradient-start: #e7f0ff;
+  --gradient-end: #f3e7ff;
+}
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: var(--color-text);
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Base Styles */
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  position: relative;
+}
+
+html, body {
+  max-width: 100vw;
+}
+
+/* Utility Classes */
+.btn-primary {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 200% 100%;
+}
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px -5px rgba(255, 107, 53, 0.4);
+  background-position: right center;
+}
+
+.btn-secondary {
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-secondary:hover {
+  transform: scale(1.05);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-primary);
+}
+
+/* Glassmorphism Effect */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(236, 239, 241, 0.5);
+}
+
+/* Card Styles */
+.card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #e2e8f0;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -6px rgba(31, 41, 55, 0.15);
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}

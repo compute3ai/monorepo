@@ -1,0 +1,207 @@
+@import "tailwindcss";
+
+@source "../../../../packages/shared-ui/src/**/*.{ts,tsx}";
+
+/* Custom Properties */
+:root {
+  --color-primary: #ff6b35;
+  --color-secondary: #f7931e;
+  --color-text: #1a1a1a;
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-border: #e2e8f0;
+}
+
+[data-theme="dark"] {
+  --color-text: #e0e0e0;
+  --color-bg: #0a0a0a;
+  --color-bg-secondary: #1a1a1a;
+  --color-border: #2a2a2a;
+}
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
+/* Base Styles */
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 200% 100%;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px -2px rgba(255, 107, 53, 0.4);
+  background-position: right center;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Scrollbar Styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  opacity: 1;
+}
+
+/* Markdown Content Styling */
+.markdown-content p {
+  margin: 0.5rem 0;
+}
+
+.markdown-content p:first-child {
+  margin-top: 0;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content pre {
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow-x: auto;
+  background: #1a1a1a !important;
+  border: 1px solid var(--color-border);
+  padding: 1rem;
+}
+
+.markdown-content pre code {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 0.875rem !important;
+  color: #e0e0e0 !important;
+  font-family: var(--font-mono);
+}
+
+.markdown-content code {
+  background: rgba(255, 107, 53, 0.15);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+  color: var(--color-primary);
+}
+
+.markdown-content strong {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.markdown-content em {
+  color: var(--color-secondary);
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content li {
+  margin: 0.25rem 0;
+}
+
+.markdown-content a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.markdown-content a:hover {
+  color: var(--color-secondary);
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding-left: 1rem;
+  margin: 0.75rem 0;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4 {
+  color: var(--color-primary);
+  margin: 1rem 0 0.5rem 0;
+  font-weight: bold;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-content th {
+  background: rgba(255, 107, 53, 0.1);
+  color: var(--color-primary);
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink::after {
+  content: '▋';
+  color: var(--color-primary);
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}

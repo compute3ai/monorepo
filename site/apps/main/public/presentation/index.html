@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compute³ - GPU Infrastructure Presentation</title>
+
+  <!-- Reveal.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/theme/white.css">
+
+  <style>
+    :root {
+      --color-primary: #667eea;
+      --color-secondary: #764ba2;
+      --gradient-start: #f0f4ff;
+      --gradient-end: #e8eaf0;
+    }
+
+    .reveal {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      text-transform: none;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .card {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border: 2px solid #e5e7eb;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 25px rgba(0,0,0,0.15);
+    }
+
+    .icon-box {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 0.75rem;
+      background: linear-gradient(to bottom right, var(--gradient-start), var(--gradient-end));
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-high-end {
+      background: linear-gradient(to right, #a855f7, #ec4899);
+    }
+
+    .badge-mid-range {
+      background: linear-gradient(to right, #3b82f6, #06b6d4);
+    }
+
+    .badge-cost-effective {
+      background: linear-gradient(to right, #22c55e, #10b981);
+    }
+
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+    }
+
+    .bullet-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .bullet-list li:before {
+      content: "";
+      display: block;
+      width: 0.5rem;
+      height: 0.5rem;
+      background: var(--color-primary);
+      border-radius: 50%;
+      margin-top: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .code-block {
+      background: #1a1a2e;
+      border-radius: 1rem;
+      padding: 2rem;
+      text-align: left;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .code-block pre {
+      margin: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #d1d5db;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .code-dot {
+      width: 0.75rem;
+      height: 0.75rem;
+      border-radius: 50%;
+    }
+
+    .gpu-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .gpu-name {
+      font-size: 1.875rem;
+      font-weight: 900;
+      color: #111827;
+      margin: 0.5rem 0 0.25rem 0;
+    }
+
+    .gpu-memory {
+      font-size: 1.125rem;
+      color: #4b5563;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .gpu-region {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-bottom: 0.5rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      padding: 1rem 3rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      border-radius: 0.75rem;
+      margin: 0 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .cta-primary {
+      background: white;
+      color: #764ba2;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+    }
+
+    .cta-secondary {
+      background: transparent;
+      color: white;
+      border: 4px solid white;
+    }
+
+    .cta-button:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 35px 60px rgba(0,0,0,0.4);
+    }
+
+    .reveal .controls {
+      color: var(--color-primary);
+    }
+
+    .reveal .progress {
+      background: rgba(0, 0, 0, 0.1);
+      color: var(--color-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section data-background-gradient="linear-gradient(to bottom right, #f8f9fa, #e8eaf0)">
+        <h1 style="font-size: 4rem; margin-bottom: 1rem;">
+          Private GPUs in <span style="color: var(--color-primary);">&lt;3 Seconds</span>
+        </h1>
+        <h2 class="gradient-text" style="font-size: 2.5rem; margin-bottom: 2rem;">
+          Pay Per Second.
+        </h2>
+        <p style="font-size: 1.5rem; color: #374151; font-weight: 600; max-width: 900px; margin: 0 auto 1rem;">
+          Secure GPU workloads. Your API keys, your container.
+        </p>
+        <p style="font-size: 1.25rem; color: #6b7280; max-width: 900px; margin: 0 auto;">
+          Custom Docker orchestration with secure API key provisioning.<br>
+          From A100s to B300s. <span style="color: var(--color-primary);">Per-second billing</span> means you only pay for what you use.
+        </p>
+      </section>
+
+      <!-- Slide 2: Why Compute³ -->
+      <section data-background-gradient="linear-gradient(to bottom right, #ffffff, #f8f9fa)">
+        <h2 style="font-size: 3rem; margin-bottom: 3rem;">
+          Why <span style="color: var(--color-primary);">Compute</span>³
+        </h2>
+        <div class="grid-3">
+          <!-- Lightning Fast -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Lightning Fast</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Boot any GPU workload in under 3 seconds. Zero cold starts.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>Sub-3 second boot times</li>
+              <li>Instant container deployment</li>
+              <li>Pre-warmed GPU instances</li>
+            </ul>
+          </div>
+
+          <!-- Pay Per Second -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Pay Per Second</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">No hourly minimums. No commitments. Pay only for seconds used.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>Per-second billing granularity</li>
+              <li>No hourly minimums</li>
+              <li>No contracts or commitments</li>
+            </ul>
+          </div>
+
+          <!-- Secure & Private -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Secure & Private</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Your API keys provisioned directly. Private GPU access only.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>Isolated container environments</li>
+              <li>Secure API key provisioning</li>
+              <li>Private GPU access only</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 3: GPU Workloads -->
+      <section data-background-gradient="linear-gradient(to bottom right, #f8f9fa, #ffffff)">
+        <h2 style="font-size: 3rem; margin-bottom: 3rem;">
+          GPU Workloads in <span style="color: var(--color-primary);">&lt;3 Seconds</span>
+        </h2>
+        <div class="grid-2">
+          <!-- LLM Inference -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 9h8M8 13h6M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">LLM Inference</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Deploy production LLM servers with vLLM, SGLang, or TGI.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>vLLM for maximum throughput</li>
+              <li>SGLang for structured generation</li>
+              <li>Any model from HuggingFace</li>
+            </ul>
+          </div>
+
+          <!-- Media Generation -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M7 4h10a3 3 0 013 3v10a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3z" />
+                  <path d="M7 15l3-3 3 3 4-4" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Media Generation</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">ComfyUI, A1111. Images, video, and audio generation.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>Image: Flux, HiDream, Qwen</li>
+              <li>Video: Wan 2.2, Hunyan</li>
+              <li>Audio: Whisper, CSM</li>
+            </ul>
+          </div>
+
+          <!-- Development -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="14" rx="3" />
+                  <path d="M7 20h10" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Development</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">GPU-accelerated JupyterLab, VSCode, or custom containers.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>JupyterLab with GPU support</li>
+              <li>VSCode Server with CUDA</li>
+              <li>Custom Docker containers</li>
+            </ul>
+          </div>
+
+          <!-- Training -->
+          <div class="card">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+              <div class="icon-box">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <h3 style="font-size: 1.5rem; margin: 0;">Training & Fine-tuning</h3>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">Fine-tune with Axolotl, Unsloth, or DeepSpeed.</p>
+            <ul class="bullet-list" style="font-size: 0.9rem; color: #6b7280;">
+              <li>Axolotl for easy fine-tuning</li>
+              <li>Unsloth for 2x faster training</li>
+              <li>DeepSpeed for distributed training</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 4: GPU Fleet -->
+      <section data-background-gradient="linear-gradient(to bottom right, #f8f9fa, #e8eaf0)">
+        <h2 style="font-size: 3rem; margin-bottom: 1rem;">World-Class GPU Fleet</h2>
+        <p style="font-size: 1.25rem; color: #6b7280; margin-bottom: 2.5rem;">
+          From cost-effective L4s to cutting-edge B300s
+        </p>
+        <div class="grid-4">
+          <!-- B300 -->
+          <div class="gpu-card">
+            <div class="badge badge-high-end">High-End</div>
+            <div class="gpu-name">B300</div>
+            <div class="gpu-memory">260GB</div>
+            <div class="gpu-region">🇺🇸 Oregon, USA</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- B200 -->
+          <div class="gpu-card">
+            <div class="badge badge-high-end">High-End</div>
+            <div class="gpu-name">B200</div>
+            <div class="gpu-memory">180GB</div>
+            <div class="gpu-region">🇺🇸 Ohio, USA</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- H200 -->
+          <div class="gpu-card">
+            <div class="badge badge-high-end">High-End</div>
+            <div class="gpu-name">H200</div>
+            <div class="gpu-memory">140GB</div>
+            <div class="gpu-region">🇺🇸 Virginia</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- H100 -->
+          <div class="gpu-card">
+            <div class="badge badge-high-end">High-End</div>
+            <div class="gpu-name">H100</div>
+            <div class="gpu-memory">80GB</div>
+            <div class="gpu-region">🇺🇸 🇧🇷 Multi-region</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- A100 -->
+          <div class="gpu-card">
+            <div class="badge badge-mid-range">Mid-Range</div>
+            <div class="gpu-name">A100</div>
+            <div class="gpu-memory">80GB</div>
+            <div class="gpu-region">🇺🇸 Multi-region</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- L40S -->
+          <div class="gpu-card">
+            <div class="badge badge-mid-range">Mid-Range</div>
+            <div class="gpu-name">L40S</div>
+            <div class="gpu-memory">48GB</div>
+            <div class="gpu-region">🇺🇸 Ohio, USA</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+          <!-- L4 -->
+          <div class="gpu-card">
+            <div class="badge badge-cost-effective">Cost-Effective</div>
+            <div class="gpu-name">L4</div>
+            <div class="gpu-memory">24GB</div>
+            <div class="gpu-region">🇺🇸 Ohio, USA</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">Per-second billing</div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Slide 5: Distributed Training -->
+      <section data-background-gradient="linear-gradient(to bottom right, #ffffff, #f8f9fa)">
+        <h2 style="font-size: 3rem; margin-bottom: 1rem;">Distributed Training at Scale</h2>
+        <p style="font-size: 1.5rem; color: #6b7280; margin-bottom: 2.5rem;">
+          Multi-node GPU clusters for training large models
+        </p>
+        <div class="card" style="max-width: 900px; margin: 0 auto; padding: 2.5rem;">
+          <div class="grid-2" style="gap: 3rem;">
+            <div style="text-align: left;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Supported Frameworks</h3>
+              <ul class="bullet-list" style="font-size: 1.1rem; color: #6b7280;">
+                <li>PyTorch Distributed (DDP)</li>
+                <li>DeepSpeed ZeRO-2/ZeRO-3</li>
+                <li>FSDP (Fully Sharded)</li>
+                <li>Megatron-LM</li>
+              </ul>
+            </div>
+            <div style="text-align: left;">
+              <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Key Features</h3>
+              <ul class="bullet-list" style="font-size: 1.1rem; color: #6b7280;">
+                <li>High-speed InfiniBand networking</li>
+                <li>Automatic multi-node orchestration</li>
+                <li>Elastic scaling during training</li>
+                <li>Checkpoint streaming to S3</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Slide 6: Code Example -->
+      <section data-background-gradient="linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)">
+        <h2 style="font-size: 3rem; color: white; margin-bottom: 2rem;">
+          Simple <span class="gradient-text">API Integration</span>
+        </h2>
+        <div class="code-block">
+          <div class="code-header">
+            <div class="code-dot" style="background: #ef4444;"></div>
+            <div class="code-dot" style="background: #eab308;"></div>
+            <div class="code-dot" style="background: #22c55e;"></div>
+            <span style="color: #9ca3af; margin-left: 1rem; font-size: 0.9rem;">Python</span>
+          </div>
+          <pre>from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.compute3.ai/v1",
+    api_key="your-api-key"
+)
+
+response = client.chat.completions.create(
+    model="gpt-4",
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ]
+)
+
+print(response.choices[0].message.content)</pre>
+        </div>
+        <p style="font-size: 1.25rem; color: #d1d5db; margin-top: 2rem;">
+          Drop-in replacement for OpenAI SDK. Compatible with any OpenAI client.
+        </p>
+      </section>
+
+      <!-- Slide 7: Final CTA -->
+      <section data-background-gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
+        <div style="color: white;">
+          <h2 style="font-size: 4rem; margin-bottom: 1.5rem;">Ready to Get Started?</h2>
+          <p style="font-size: 2rem; font-weight: 600; margin-bottom: 1rem;">
+            Launch your first GPU workload today
+          </p>
+          <p style="font-size: 1.5rem; margin-bottom: 3rem; opacity: 0.9; max-width: 800px; margin-left: auto; margin-right: auto;">
+            From A100s to B200s. Per-second billing. Your API keys, your container.
+          </p>
+          <div style="display: flex; gap: 2rem; justify-content: center; align-items: center;">
+            <div class="cta-button cta-primary">Contact Us</div>
+            <div class="cta-button cta-secondary">View Documentation</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Reveal.js JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.0.4/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1024,
+      height: 768,
+      margin: 0.04,
+      minScale: 0.2,
+      maxScale: 2.0,
+      controls: true,
+      progress: true,
+      center: true,
+      hash: true,
+      transition: 'slide',
+      backgroundTransition: 'fade'
+    });
+  </script>
+</body>
+</html>

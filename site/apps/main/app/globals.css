@@ -1,0 +1,203 @@
+@import "tailwindcss";
+
+@source "../../../packages/shared-ui/src/**/*.{ts,tsx}";
+
+/* Custom Properties */
+:root {
+  --color-primary: #ff6b35;
+  --color-secondary: #f7931e;
+  --color-text: #1a1a1a;
+  --color-bg-light: #f8f9fa;
+  --gradient-start: #e7f0ff;
+  --gradient-end: #f3e7ff;
+}
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: var(--color-text);
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Base Styles */
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  position: relative;
+}
+
+html, body {
+  max-width: 100vw;
+}
+
+/* Utility Classes */
+.gradient-text {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: 200% 100%;
+}
+.btn-primary:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px -5px rgba(255, 107, 53, 0.4);
+  background-position: right center;
+}
+
+.btn-secondary {
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-secondary:hover {
+  transform: scale(1.05);
+  background-color: var(--color-bg-light);
+  border-color: var(--color-primary);
+}
+
+/* Navigation Underline Effect */
+.nav-link-underline {
+  position: relative;
+}
+.nav-link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Glassmorphism Effect */
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(236, 239, 241, 0.5);
+}
+
+/* Card Hover Effects */
+.card {
+  transition: transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.35s ease;
+  border: 1px solid #e2e8f0;
+}
+.card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px -12px rgba(31, 41, 55, 0.25);
+}
+
+/* Code Block Glow Effect */
+.code-block-glow {
+  position: relative;
+  z-index: 1;
+}
+.code-block-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  background: linear-gradient(45deg, var(--color-primary), #a855f7, #3b82f6);
+  border-radius: 0.8rem;
+  z-index: -1;
+  filter: blur(15px);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.code-block-glow:hover::before {
+  opacity: 0.3;
+}
+
+/* Scroll Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Marquee Animation */
+.marquee {
+  overflow: hidden;
+  position: relative;
+}
+.marquee-content {
+  display: flex;
+  animation: marquee 30s linear infinite;
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Hero Content Animation */
+.hero-content > * {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Scroll Indicator Animation */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+.scroll-indicator {
+  animation: bounce 2s infinite;
+}
+
+/* Hero Floating Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+.hero-image {
+  animation: fadeInUp 1s ease 0.5s both, float 6s ease-in-out infinite 1.5s;
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .hero-headline {
+    font-size: 2.5rem;
+  }
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
