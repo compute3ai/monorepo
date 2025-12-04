@@ -84,6 +84,9 @@ export default function Header() {
             <a href={NAV_URLS.models} className="text-gray-600 hover:text-gray-900 nav-link-underline">
               Models
             </a>
+            <a href={NAV_URLS.playground} className="text-gray-600 hover:text-gray-900 nav-link-underline">
+              Playground
+            </a>
             <a href={NAV_URLS.launch} className="text-gray-600 hover:text-gray-900 nav-link-underline">
               Launch
             </a>
@@ -162,6 +165,13 @@ export default function Header() {
             onClick={() => setMobileMenuOpen(false)}
           >
             Models
+          </a>
+          <a
+            href={NAV_URLS.playground}
+            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Playground
           </a>
           <a
             href={NAV_URLS.launch}

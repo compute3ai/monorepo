@@ -4,7 +4,7 @@ from .config import configure, GHCR_IMAGES, COMFYUI_IMAGE
 from .http import APIError
 from .instances import GPUType, GPUConfig, Region, GPUPricing, PricingTier
 from .jobs import Job, JobMetrics, GPUMetrics, find_job, find_by_id, find_by_hostname, find_by_ip
-from .job import BaseJob, ComfyUIJob, apply_params, find_node, find_nodes
+from .job import BaseJob, ComfyUIJob, apply_params, find_node, find_nodes, load_template, graph_to_api, DEFAULT_OBJECT_INFO
 from .logs import LogStream, stream_logs, fetch_logs
 
 __version__ = "0.2.0"
@@ -37,6 +37,9 @@ __all__ = [
     "apply_params",
     "find_node",
     "find_nodes",
+    "load_template",
+    "graph_to_api",
+    "DEFAULT_OBJECT_INFO",
     # Log streaming
     "LogStream",
     "stream_logs",

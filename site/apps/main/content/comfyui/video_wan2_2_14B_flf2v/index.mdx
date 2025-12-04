@@ -1,0 +1,124 @@
+---
+title: "Wan 2.2 14B First-Last Frame to Video"
+description: "Generate smooth video transitions by defining start and end frames."
+template_id: "video_wan2_2_14B_flf2v"
+bundle: "media-video"
+output_type: "video"
+thumbnail: "/comfyui/video_wan2_2_14B_flf2v/thumbnail.webp"
+tags: ["FLF2V", "Video"]
+tutorial_url: "https://docs.comfy.org/tutorials/video/wan/wan2_2"
+date: "2025-08-02"
+models: ["wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors", "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors", "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan_2.1_vae.safetensors"]
+---
+
+# Wan 2.2 14B First-Last Frame to Video
+
+![thumbnail](/comfyui/video_wan2_2_14B_flf2v/thumbnail.webp)
+
+## About
+
+1. Box-select then use Ctrl + B to enable
+2. If you don't want to run both groups simultaneously, don't forget to use **Ctrl + B** to disable the **fp8_scaled + 4steps LoRA** group after enabling the **fp8_scaled** group, or try the [partial - execution](https://docs.comfy.org/interface/features/partial-execution) feature.
+
+**Note: Model Links**
+[Tutorial](https://docs.comfy.org/tutorials/video/wan/wan2_2)
+
+
+## Model links
+
+**text_encoders**
+
+- [umt5_xxl_fp8_e4m3fn_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors)
+
+**loras**
+
+- [wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors)
+- [wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors)
+
+**diffusion_models**
+
+- [wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors)
+- [wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors)
+
+**vae**
+
+- [wan_2.1_vae.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 text_encoders/
+│   │      └── umt5_xxl_fp8_e4m3fn_scaled.safetensors
+│   ├── 📂 loras/
+│   │      ├── wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors
+│   │      └── wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors
+│   ├── 📂 diffusion_models/
+│   │      ├── wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors
+│   │      └── wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors
+│   └── 📂 vae/
+│          └── wan_2.1_vae.safetensors
+```
+
+## Report issue
+
+If you encounter any issues when running this workflow, [report template issue here](https://github.com/Comfy-Org/workflow_templates/issues)
+
+**Note: VRAM Usage**
+## GPU:RTX4090D 24GB
+
+| Model            | Size |VRAM Usage | 1st Generation | 2nd Generation |
+|---------------------|-------|-----------|---------------|-----------------|
+| fp8_scaled               |640*640| 84%               | ≈  536s              | ≈ 513s                   |
+| fp8_scaled +  4steps LoRA  | 640*640  | 89%                | ≈ 108s               | ≈ 71s                   |
+
+**Video Size**
+By default, we set the video to a smaller size for users with low VRAM. If you have enough VRAM, you can change the size
+
+**Note: About 4 Steps LoRA**
+Using the Wan2.2 Lighting LoRA will result in the loss of video dynamics, but it will reduce the generation time. This template provides two workflows, and you can enable one as needed.
+
+**Note: Video Size**
+By default, we set the video to a smaller size for users with low VRAM. If you have enough VRAM, you can change the size
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `0` | Random seed |
+| `steps` | int | `4` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `video/ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+冰晶组成的小猫突然被惊醒，愤怒的它抬头，渐渐长出色彩毛发变成为一个巨兽，像发现危险一样呲牙，瞪大眼睛
+```
+
+## Default Negative Prompt
+
+```
+色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走
+```
+
+## Usage
+
+```bash
+c3 comfyui run video_wan2_2_14B_flf2v \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 4 \
+  --cfg 1
+```
+
+## Required Models
+
+- `wan2.2_i2v_high_noise_14B_fp8_scaled.safetensors` (UNETLoader)
+- `wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors` (UNETLoader)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (CLIPLoader)
+- `wan_2.1_vae.safetensors` (VAELoader)

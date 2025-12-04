@@ -50,8 +50,8 @@ export default function ParticleCanvas() {
         this.x = Math.random() * canvas!.width;
         this.y = Math.random() * canvas!.height;
         this.size = Math.random() * 3 + 1;
-        this.speedX = Math.random() * 1 - 0.5;
-        this.speedY = Math.random() * 1 - 0.5;
+        this.speedX = Math.random() * 0.4 - 0.2;
+        this.speedY = Math.random() * 0.4 - 0.2;
         this.color = `rgba(${
           Math.random() > 0.5 ? "135, 206, 250" : "255, 165, 0"
         }, ${Math.random() * 0.5 + 0.2})`;

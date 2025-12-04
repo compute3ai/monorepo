@@ -1,0 +1,116 @@
+---
+title: "Qwen Image Edit 2509"
+description: "Advanced image editing with multi-image support, improved consistency, and ControlNet integration."
+template_id: "image_qwen_image_edit_2509"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/image_qwen_image_edit_2509/thumbnail.webp"
+tags: ["Image to Image", "Image Edit", "ControlNet"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/qwen/qwen-image-edit"
+date: "2025-09-25"
+models: ["qwen_image_edit_2509_fp8_e4m3fn.safetensors", "qwen_2.5_vl_7b_fp8_scaled.safetensors", "qwen_image_vae.safetensors"]
+---
+
+# Qwen Image Edit 2509
+
+![thumbnail](/comfyui/image_qwen_image_edit_2509/thumbnail.webp)
+
+## About
+
+**Note: About image size**
+You can use the latent from the **EmptySD3LatentImage** to replace **VAE Encode**, so you can customize the image size.
+
+**Note: About image size**
+You can use the latent from the **EmptySD3LatentImage** to replace **VAE Encode**, so you can customize the image size.
+
+**Model links**
+[Tutorial](https://docs.comfy.org/tutorials/image/qwen/qwen-image-edit)
+
+
+## Model links
+
+You can find all the models on [Comfy-Org/Qwen-Image_ComfyUI](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main) and  [Comfy-Org/Qwen-Image-Edit_ComfyUI](https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI) 
+
+**Diffusion model**
+
+- [qwen_image_edit_2509_fp8_e4m3fn.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2509_fp8_e4m3fn.safetensors)
+
+**LoRA**
+
+- [Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors](https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Edit-2509/Qwen-Image-Edit-2509-Lightning-4steps-V1.0-bf16.safetensors)
+
+**Text encoder**
+
+- [qwen_2.5_vl_7b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors)
+
+**VAE**
+
+- [qwen_image_vae.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors)
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 diffusion_models/
+│   │   └── qwen_image_edit_2509_fp8_e4m3fn.safetensors
+│   ├── 📂 loras/
+│   │   └── Qwen-Image-Lightning-4steps-V1.0.safetensors
+│   ├── 📂 vae/
+│   │   └── qwen_image_vae.safetensors
+│   └── 📂 text_encoders/
+│       └── qwen_2.5_vl_7b_fp8_scaled.safetensors
+```
+
+## Report issue
+If you have any problems running this workflow, please report template-related issues via this link: [report the template issue here](https://github.com/Comfy-Org/workflow_templates/issues)
+
+**Note: KSampler settings**
+You can test and find the best setting by yourself. The following table is for reference.
+| Parameters   | Qwen Team | Comfy Original | with 4steps LoRA |
+|--------|---------|------------|---------------------------|
+| Steps  | 50      | 20         | 4                         |
+| CFG    | 4.0     | 2.5        | 1.0                       |
+
+**Note: Raw latent version**
+Since the **TextEncodeQwenImageEditPlus** node will scale the image to 1M pixels, you might find that the output has a pixel-shifting issue.
+
+The **Raw latent version** is to provide the raw latent to the sampler. This is the way you can provide the raw latent as an input condition.
+
+**Note: KSampler settings**
+You can test and find the best setting by yourself. The following table is for reference.
+| Parameters   | Qwen Team | Comfy Original | with 4steps LoRA |
+|--------|---------|------------|---------------------------|
+| Steps  | 50      | 20         | 4                         |
+| CFG    | 4.0     | 2.5        | 1.0                       |
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `width` | int | `1024` | Output width in pixels |
+| `height` | int | `1024` | Output height in pixels |
+| `seed` | int | `365832727981113` | Random seed (use -1 for random) |
+| `steps` | int | `4` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Usage
+
+```bash
+c3 comfyui run image_qwen_image_edit_2509 \
+  --prompt "your prompt here" \
+  --output my_output \
+  --width 1024 \
+  --height 1024 \
+  --steps 4 \
+  --cfg 1
+```
+
+## Required Models
+
+- `qwen_image_edit_2509_fp8_e4m3fn.safetensors` (UNETLoader)
+- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (CLIPLoader)
+- `qwen_image_vae.safetensors` (VAELoader)

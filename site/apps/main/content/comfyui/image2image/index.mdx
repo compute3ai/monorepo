@@ -1,0 +1,71 @@
+---
+title: "Image to Image"
+description: "Transform existing images using text prompts."
+template_id: "image2image"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/image2image/thumbnail.webp"
+tags: ["Image to Image", "Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/basic/image-to-image"
+date: "2025-03-01"
+models: ["v1-5-pruned-emaonly-fp16.safetensors"]
+---
+
+# Image to Image
+
+![thumbnail](/comfyui/image2image/thumbnail.webp)
+
+## About
+
+**About Scale Image to Total Pixels**
+The model this template uses is trained based on a 512×512 image dataset. So, if you use an input image that's too large, it might cause some issues. We've added the "Scale image to total pixels" node to scale images. If you're quite familiar with this model, you can remove it.
+
+When using the image-to-image workflow, you should remember that the **denoise** value should be less than 1. The closer the value is to 0, the more features of the input image the output image will retain.
+
+[Tutorial](https://docs.comfy.org/tutorials/basic/image-to-image)
+
+
+## Model links
+
+**checkpoints**
+
+- [v1-5-pruned-emaonly-fp16.safetensors](https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors?download=true)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   └── 📂 checkpoints/
+│          └── v1-5-pruned-emaonly-fp16.safetensors
+```
+
+
+## Report issue
+If you have any problems running this workflow, please report template-related issues via this link: [report the template issue here](https://github.com/Comfy-Org/workflow_templates/issues)
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `266967097991208` | Random seed (use -1 for random) |
+| `steps` | int | `15` | Number of sampling steps |
+| `cfg` | float | `8` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `dpmpp_2m` | Sampler algorithm |
+| `scheduler` | enum | `normal` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Usage
+
+```bash
+c3 comfyui run image2image \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 15 \
+  --cfg 8
+```
+
+## Required Models
+
+- `v1-5-pruned-emaonly-fp16.safetensors` (CheckpointLoaderSimple)

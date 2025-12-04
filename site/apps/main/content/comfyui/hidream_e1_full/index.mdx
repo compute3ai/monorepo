@@ -1,0 +1,83 @@
+---
+title: "HiDream E1 Image Edit"
+description: "Edit images with HiDream E1 - Professional natural language image editing model."
+template_id: "hidream_e1_full"
+bundle: "media-other"
+output_type: "image"
+thumbnail: "/comfyui/hidream_e1_full/thumbnail.webp"
+tags: ["Image Edit", "Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/hidream/hidream-e1"
+date: "2025-05-01"
+models: ["hidream_e1_full_bf16.safetensors", "ae.safetensors"]
+---
+
+# HiDream E1 Image Edit
+
+![thumbnail](/comfyui/hidream_e1_full/thumbnail.webp)
+
+## About
+
+[Tutorial](https://docs.comfy.org/tutorials/image/hidream/hidream-e1) 
+
+**Diffusion model**
+- [hidream_e1_full_bf16.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_e1_full_bf16.safetensors)
+
+**Text encoder**：
+
+- [clip_l_hidream.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/clip_l_hidream.safetensors)
+- [clip_g_hidream.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/clip_g_hidream.safetensors)
+- [t5xxl_fp8_e4m3fn_scaled.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors) 
+- [llama_3.1_8b_instruct_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors)
+
+**VAE**
+-  [ae.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/vae/ae.safetensors)
+
+
+
+File saved location
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 text_encoders/
+│   │   ├─── clip_l_hidream.safetensors
+│   │   ├─── clip_g_hidream.safetensors
+│   │   ├─── t5xxl_fp8_e4m3fn_scaled.safetensors
+│   │   └─── llama_3.1_8b_instruct_fp8_scaled.safetensors
+│   └── 📂 vae/
+│   │   └── ae.safetensors
+│   └── 📂 diffusion_models/
+│       └── hidream_e1_full_bf16.safetensors   
+```
+
+The image will be scaled to 768*768. Using other dimensions may not yield particularly good results.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+Let the girl put on the VR glasses full of a sense of technology, just like the scenes in Ready Player One, with CG rendering and ultra-realism.
+```
+
+## Default Negative Prompt
+
+```
+low quality, blurry, distorted
+```
+
+## Usage
+
+```bash
+c3 comfyui run hidream_e1_full \
+  --prompt "your prompt here" \
+  --output my_output
+```
+
+## Required Models
+
+- `hidream_e1_full_bf16.safetensors` (UNETLoader)
+- `ae.safetensors` (VAELoader)

@@ -1,0 +1,59 @@
+---
+title: "Hunyuan3D 2.0 MV"
+description: "Generate 3D models from multiple views using Hunyuan3D 2.0 MV."
+template_id: "3d_hunyuan3d_multiview_to_model"
+bundle: "media-other"
+output_type: "3D"
+thumbnail: "/comfyui/3d_hunyuan3d_multiview_to_model/thumbnail.webp"
+tags: ["3D", "Image to 3D"]
+date: "2025-03-01"
+models: []
+---
+
+# Hunyuan3D 2.0 MV
+
+![thumbnail](/comfyui/3d_hunyuan3d_multiview_to_model/thumbnail.webp)
+
+## About
+
+**CFG setting**
+Try adjusting the CFG settings to get better output.
+
+[Tutorial](https://docs.comfy.org/tutorials/3d/hunyuan3D-2)
+
+
+## Model link
+
+**checkpoints**
+
+- [hunyuan3d-dit-v2-mv_fp16.safetensors](https://huggingface.co/Comfy-Org/hunyuan3D_2.0_repackaged/resolve/main/split_files/hunyuan3d-dit-v2-mv_fp16.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   └── 📂 checkpoints/
+│          └── hunyuan3d-dit-v2-mv_fp16.safetensors
+```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `502126049100058` | Random seed (use -1 for random) |
+| `steps` | int | `20` | Number of sampling steps |
+| `cfg` | float | `7.5` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `normal` | Noise scheduler |
+
+## Usage
+
+```bash
+c3 comfyui run 3d_hunyuan3d_multiview_to_model \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 20 \
+  --cfg 7.5
+```

@@ -1,0 +1,7 @@
+# Template docs generator
+comfyui-workflow-templates>=0.7.0
+comfyui-workflow-templates-media-video>=0.3.0
+comfyui-workflow-templates-media-image>=0.3.0
+comfyui-workflow-templates-media-api>=0.3.0
+comfyui-workflow-templates-media-other>=0.3.0
+Pillow>=10.0.0

@@ -1,0 +1,109 @@
+---
+title: "Hunyuan Video 1.5 Image to Video"
+description: "Animate still images into dynamic videos with precise motion and camera control. Maintains visual consistency while bringing photos and illustrations to life with smooth, natural movements."
+template_id: "video_hunyuan_video_1.5_720p_i2v"
+bundle: "media-video"
+output_type: "video"
+thumbnail: "/comfyui/video_hunyuan_video_1.5_720p_i2v/thumbnail.webp"
+tags: ["Image to Video", "Video"]
+date: "2025-11-21"
+models: ["hunyuanvideo1.5_1080p_sr_distilled_fp16.safetensors", "hunyuanvideo1.5_720p_i2v_fp16.safetensors", "hunyuanvideo15_vae_fp16.safetensors"]
+---
+
+# Hunyuan Video 1.5 Image to Video
+
+![thumbnail](/comfyui/video_hunyuan_video_1.5_720p_i2v/thumbnail.webp)
+
+## About
+
+**Model links**
+## Report issue
+
+If you found any issues when running this workflow, [report template issue here](https://github.com/Comfy-Org/workflow_templates/issues)
+
+## Model links
+
+[HunyuanVideo_1.5_repackaged](https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/tree/main/split_files)
+
+**text_encoders**
+
+- [qwen_2.5_vl_7b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors)
+- [byt5_small_glyphxl_fp16.safetensors](https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/text_encoders/byt5_small_glyphxl_fp16.safetensors)
+
+**clip_vision**
+
+- [sigclip_vision_patch14_384.safetensors](https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors)
+
+**diffusion_models**
+
+- [hunyuanvideo1.5_720p_i2v_fp16.safetensors](https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/diffusion_models/hunyuanvideo1.5_720p_i2v_fp16.safetensors)
+
+**vae**
+
+- [hunyuanvideo15_vae_fp16.safetensors](https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/vae/hunyuanvideo15_vae_fp16.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 text_encoders/
+│   │      ├── qwen_2.5_vl_7b_fp8_scaled.safetensors
+│   │      └── byt5_small_glyphxl_fp16.safetensors
+│   ├── 📂 clip_vision/
+│   │      └── sigclip_vision_patch14_384.safetensors
+│   ├── 📂 diffusion_models/
+│   │      └── hunyuanvideo1.5_720p_i2v_fp16.safetensors
+│   └── 📂 vae/
+│          └── hunyuanvideo15_vae_fp16.safetensors
+```
+
+If you don't have enough VRAM and encounter the OOM error, please try to set the `weight_dtype` to `fp8_e4n3fn`.
+
+**Sampler settings**
+50 inference steps just take too long to get the final video, so by default we set the step to 20 steps. If you want a better quality, please try the original settings below
+
+## Original setting from Hunyuan team
+| Model              | cfg | embeded_cfg | shift | inference step |
+|-----------------------|-----|-------------|-------|----------------|
+| 480p_t2v              | 6   | None        | 5     | 50             |
+| 480p_i2v              | 6   | None        | 5     | 50             |
+| 720p_t2v              | 6   | None        | 9     | 50             |
+| 720p_i2v              | 6   | None        | 7     | 50             |
+| 480p_t2v_distilled    | 1   | None        | 5     | 50             |
+| 480p_i2v_distilled    | 1   | None        | 5     | 50             |
+| 720p_t2v_distilled    | 1   | None        | 9     | 50             |
+| 720p_i2v_distilled    | 1   | None        | 7     | 50             |
+
+EasyCache can speed up this workflow, but it will also sacrifice the video quality. If you need it, use Ctrl+B to enable.
+
+Use the VAE Decode (Tiled) when it takes too long to get the final video.
+
+Split at matching sigma to the noise scale
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `filename_prefix` | string | `video/hunyuan_video_1.5` | Output filename prefix |
+
+## Example Prompt
+
+```
+A young wasteland explorer in a weathered blue vault suit sprints through a dense, overgrown forest. Wearing a white aviator helmet with fur ear flaps and brass goggles, his mechanical gauntlets swing as he dodges massive tree trunks and low-hanging vines. Sunlight filters through the canopy, creating dramatic rays. He splashes through streams, crushes fallen leaves, and leaps over a fallen log. Birds scatter as he passes, and the camera captures his fast-paced, dynamic chase through the wilderness. 
+```
+
+## Usage
+
+```bash
+c3 comfyui run video_hunyuan_video_1.5_720p_i2v \
+  --prompt "your prompt here" \
+  --output my_output
+```
+
+## Required Models
+
+- `hunyuanvideo1.5_1080p_sr_distilled_fp16.safetensors` (UNETLoader)
+- `hunyuanvideo1.5_720p_i2v_fp16.safetensors` (UNETLoader)
+- `hunyuanvideo15_vae_fp16.safetensors` (VAELoader)

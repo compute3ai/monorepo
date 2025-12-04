@@ -1,0 +1,59 @@
+---
+title: "Flux Schnell FP8"
+description: "Quickly generate images with Flux Schnell fp8 quantized version. Ideal for low-end hardware, requires only 4 steps to generate images."
+template_id: "flux_schnell"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/flux_schnell/thumbnail.webp"
+tags: ["Text to Image", "Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/flux/flux-1-text-to-image"
+date: "2025-03-01"
+models: ["flux1-schnell-fp8.safetensors"]
+---
+
+# Flux Schnell FP8
+
+![thumbnail](/comfyui/flux_schnell/thumbnail.webp)
+
+## About
+
+🛈 [Learn more about this workflow](https://comfyanonymous.github.io/ComfyUI_examples/flux/#flux-schnell-1)
+
+Note that Flux dev and schnell do not have any negative prompt so CFG should be set to 1.0. Setting CFG to 1.0 means the negative prompt is ignored.
+
+The schnell model is a distilled model that can generate a good image with only 4 steps.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `width` | int | `1024` | Output width in pixels |
+| `height` | int | `1024` | Output height in pixels |
+| `seed` | int | `173805153958730` | Random seed (use -1 for random) |
+| `steps` | int | `4` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+a bottle with a beautiful rainbow galaxy inside it on top of a wooden table in the middle of a modern kitchen beside a plate of vegetables and mushrooms and a wine glasse that contains a planet earth with a plate with a half eaten apple pie on it
+```
+
+## Usage
+
+```bash
+c3 comfyui run flux_schnell \
+  --prompt "your prompt here" \
+  --output my_output \
+  --width 1024 \
+  --height 1024 \
+  --steps 4 \
+  --cfg 1
+```
+
+## Required Models
+
+- `flux1-schnell-fp8.safetensors` (CheckpointLoaderSimple)

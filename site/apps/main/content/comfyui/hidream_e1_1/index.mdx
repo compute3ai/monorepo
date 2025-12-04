@@ -1,0 +1,78 @@
+---
+title: "HiDream E1.1 Image Edit"
+description: "Edit images with HiDream E1.1 \u2013 it\u2019s better in image quality and editing accuracy than HiDream-E1-Full."
+template_id: "hidream_e1_1"
+bundle: "media-other"
+output_type: "image"
+thumbnail: "/comfyui/hidream_e1_1/thumbnail.webp"
+tags: ["Image Edit", "Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/hidream/hidream-e1"
+date: "2025-07-21"
+models: ["hidream_e1_1_bf16.safetensors", "ae.safetensors"]
+---
+
+# HiDream E1.1 Image Edit
+
+![thumbnail](/comfyui/hidream_e1_1/thumbnail.webp)
+
+## About
+
+[Tutorial](https://docs.comfy.org/tutorials/image/hidream/hidream-e1)
+
+**Diffusion Model**
+- [hidream_e1_1_bf16.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_e1_1_bf16.safetensors)
+
+**Text Encoder**：
+
+- [clip_l_hidream.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/clip_l_hidream.safetensors)
+- [clip_g_hidream.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/clip_g_hidream.safetensors)
+- [t5xxl_fp8_e4m3fn_scaled.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors) 
+- [llama_3.1_8b_instruct_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors)
+
+**VAE**
+-  [ae.safetensors](https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/vae/ae.safetensors)
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 text_encoders/
+│   │   ├─── clip_l_hidream.safetensors
+│   │   ├─── clip_g_hidream.safetensors
+│   │   ├─── t5xxl_fp8_e4m3fn_scaled.safetensors
+│   │   └─── llama_3.1_8b_instruct_fp8_scaled.safetensors
+│   └── 📂 vae/
+│   │   └── ae.safetensors
+│   └── 📂 diffusion_models/
+│       └── hidream_e1_1_bf16.safetensors   
+```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+Change the image to let the girl’s hair fall loose around her shoulders, natural and flowing. Don’t change other parts
+```
+
+## Default Negative Prompt
+
+```
+low quality, blurry, distorted
+```
+
+## Usage
+
+```bash
+c3 comfyui run hidream_e1_1 \
+  --prompt "your prompt here" \
+  --output my_output
+```
+
+## Required Models
+
+- `hidream_e1_1_bf16.safetensors` (UNETLoader)
+- `ae.safetensors` (VAELoader)

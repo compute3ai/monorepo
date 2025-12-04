@@ -22,6 +22,7 @@ export const NAV_URLS = {
   // Main site pages
   models: IS_MAIN_SITE ? '/models' : `${MAIN_SITE_URL}/models`,
   gpus: IS_MAIN_SITE ? '/gpus' : `${MAIN_SITE_URL}/gpus`,
+  playground: IS_MAIN_SITE ? '/playground' : `${MAIN_SITE_URL}/playground`,
   docs: 'https://docs.compute3.ai',
 
   // Console pages

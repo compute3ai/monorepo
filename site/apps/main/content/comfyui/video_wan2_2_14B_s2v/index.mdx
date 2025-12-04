@@ -1,0 +1,157 @@
+---
+title: "Wan2.2-S2V Audio-Driven Video Generation"
+description: "Transform static images and audio into dynamic videos with perfect synchronization and minute-level generation."
+template_id: "video_wan2_2_14B_s2v"
+bundle: "media-video"
+output_type: "video"
+thumbnail: "/comfyui/video_wan2_2_14B_s2v/thumbnail.webp"
+tags: ["Video"]
+tutorial_url: "https://docs.comfy.org/tutorials/video/wan/wan2-2-s2v"
+date: "2025-08-02"
+models: ["wan2.2_s2v_14B_fp8_scaled.safetensors", "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan_2.1_vae.safetensors"]
+---
+
+# Wan2.2-S2V Audio-Driven Video Generation
+
+![thumbnail](/comfyui/video_wan2_2_14B_s2v/thumbnail.webp)
+
+## About
+
+**Batch sizes**
+## Batch sizes
+Batch sizes depend on how many Video S2V Extend subgraphs you have added to the workflow.
+
+Each Video S2V Extend subgraph will add 77 frames to the final output.
+
+Example:
+
+If you added 1 Video S2V Extend subgraph, you should set the batch size to 2.
+
+We added 2 Video S2V Extend subgraphs, so the batch size value is 3.
+
+## Chunk length
+
+77 is the default length from the WAN2.2S2V official code. This model needs at least 73 frames. If you set the value too high, it might cause an out-of-memory issue.
+
+So you can just leave 77 as it is.
+
+**Batch sizes**
+## Batch sizes
+Batch sizes depend on how many Video S2V Extend subgraphs you have added to the workflow.
+
+Each Video S2V Extend subgraph will add 77 frames to the final output.
+
+Example:
+
+If you added 1 Video S2V Extend subgraph, you should set the batch size to 2.
+
+We added 2 Video S2V Extend subgraphs, so the batch size value is 3.
+
+## Chunk length
+
+77 is the default length from the WAN2.2S2V official code. This model needs at least 73 frames. If you set the value too high, it might cause an out-of-memory issue.
+
+So you can just leave 77 as it is.
+
+**Sampler settings**
+| model            | Steps | cfg |
+|---------------------|---------------|---------------|
+| With 4 steps lightning LoRA            | 4                | 1.0               |
+| Without 4 Steps lightning LoRA    | 20               | 6.0               |
+
+**Sampler settings**
+| model            | Steps | cfg |
+|---------------------|---------------|---------------|
+| With 4 steps lightning LoRA            | 4                | 1.0               |
+| Without 4 Steps lightning LoRA    | 20               | 6.0               |
+
+This is the 20-step workflow. We put it here in case some users don't know how to modify the workflow that with Wan2.2 lightning LoRA. If you want to enable it, box-select the workflow and then use Ctrl+B to enable it.
+
+**About fp8_scaled and bf16**
+You can find both models [Here](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files/diffusion_models)
+
+- [wan2.2_s2v_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors)
+- [wan2.2_s2v_14B_bf16.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_s2v_14B_bf16.safetensors)
+
+This template is using wan2.2_s2v_14B_fp8_scaled.safetensors, which requires less VRAM. But you can try wan2.2_s2v_14B_bf16.safetensors to reduce degradation.
+
+**Model Links**
+[Tutorial](https://docs.comfy.org/tutorials/video/wan/wan2-2-s2v
+) 
+
+**diffusion_models**       
+- [wan2.2_s2v_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_s2v_14B_fp8_scaled.safetensors)
+- [wan2.2_s2v_14B_bf16.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_s2v_14B_bf16.safetensors)
+
+**audio_encoders**
+- [wav2vec2_large_english_fp16.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/audio_encoders/wav2vec2_large_english_fp16.safetensors)
+
+**vae**
+- [wan_2.1_vae.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors)
+
+**text_encoders**   
+- [umt5_xxl_fp8_e4m3fn_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors)
+
+
+```
+ComfyUI/
+├───📂 models/
+│   ├───📂 diffusion_models/
+│   │   ├─── wan2.2_s2v_14B_fp8_scaled.safetensors
+│   │   └─── wan2.2_s2v_14B_bf16.safetensors #  The bf16 model will cause less degradation
+│   ├───📂 text_encoders/
+│   │   └─── umt5_xxl_fp8_e4m3fn_scaled.safetensors 
+│   ├───📂 audio_encoders/ # Create one if you can't find this folder
+│   │   └─── wav2vec2_large_english_fp16.safetensors 
+│   └───📂 vae/
+│       └── wan_2.1_vae.safetensors
+```
+
+Stupid hack to fix the first frame being overbaked by the VAE, double the first frame and remove it after decoding.
+
+**! Important**
+If you need longer video output, just select one subgraph below, then use Ctrl+C and Ctrl+Shift+V to copy and paste the Video S2V Extend subgraph. Each of them will extend the other frames you set to the chunk length; by default, it's 77 frames.
+
+Stupid hack to fix the first frame being overbaked by the VAE, double the first frame and remove it after decoding.
+
+**About lightning LoRA**
+Tested all wan2.2 lightning LoRAs; all worked, but many keys didn't match. However, because it reduces generation time a lot, we added this lightning model. If you find the output quality is too bad, you can try the 20 steps workflow without lightning LoRA.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `20` | Random seed (use -1 for random) |
+| `steps` | int | `10` | Number of sampling steps |
+| `cfg` | float | `6` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `uni_pc` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `video/ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+The man is playing the guitar. He looks down at his hands playing the guitar and sings affectionately and gently.
+```
+
+## Default Negative Prompt
+
+```
+色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走
+```
+
+## Usage
+
+```bash
+c3 comfyui run video_wan2_2_14B_s2v \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 10 \
+  --cfg 6
+```
+
+## Required Models
+
+- `wan2.2_s2v_14B_fp8_scaled.safetensors` (UNETLoader)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (CLIPLoader)
+- `wan_2.1_vae.safetensors` (VAELoader)

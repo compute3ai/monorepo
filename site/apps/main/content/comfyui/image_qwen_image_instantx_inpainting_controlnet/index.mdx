@@ -1,0 +1,129 @@
+---
+title: "Qwen-Image InstantX Inpainting ControlNet"
+description: "Professional inpainting and image editing with Qwen-Image InstantX ControlNet. Supports object replacement, text modification, background changes, and outpainting."
+template_id: "image_qwen_image_instantx_inpainting_controlnet"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/image_qwen_image_instantx_inpainting_controlnet/thumbnail.webp"
+tags: ["Image to Image", "Image", "ControlNet", "Inpainting"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/qwen/qwen-image"
+date: "2025-09-12"
+models: ["qwen_image_fp8_e4m3fn.safetensors", "qwen_2.5_vl_7b_fp8_scaled.safetensors", "qwen_image_vae.safetensors"]
+---
+
+# Qwen-Image InstantX Inpainting ControlNet
+
+![thumbnail](/comfyui/image_qwen_image_instantx_inpainting_controlnet/thumbnail.webp)
+
+## About
+
+**About how to create mask**
+Right-click on the Load Image node, then click "Open in MaskEditor" to open it and paint the area you want to inpaint.
+
+You can learn more about MaskEditor in the [MaskEditor Document](https://docs.comfy.org/interface/maskeditor)
+
+**About ImageCompositeMasked**
+Some users might want to keep the unmasked area unchanged, though with ImageCompositeMasked, we can paste the original pixels back.
+
+**About ImageScaleToMaxDimension**
+The input image shouldn't be too large (such as more than 3000). A too large input might cause bad results. You can enable the *ImageScaleToMaxDimension* node to download and scale the input image.
+
+**Model links**
+[Tutorial](https://docs.comfy.org/tutorials/image/qwen/qwen-image)
+
+
+## Model links
+
+You can find all the models on [Huggingface](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main) or [Modelscope](https://modelscope.cn/models/Comfy-Org/Qwen-Image_ComfyUI/files)
+
+**Diffusion model**
+
+- [qwen_image_fp8_e4m3fn.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors)
+
+**ControlNet**
+
+- [Qwen-Image-InstantX-ControlNet-Inpainting.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image-InstantX-ControlNets/resolve/main/split_files/controlnet/Qwen-Image-InstantX-ControlNet-Inpainting.safetensors)
+
+
+**LoRA**
+
+- [Qwen-Image-Lightning-4steps-V1.0.safetensors](https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors)
+
+**Text encoder**
+
+- [qwen_2.5_vl_7b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors)
+
+**VAE**
+
+- [qwen_image_vae.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 diffusion_models/
+│   │   ├── qwen_image_fp8_e4m3fn.safetensors
+│   │   └── qwen_image_distill_full_fp8_e4m3fn.safetensors
+│   ├── 📂 loras/
+│   │   └── Qwen-Image-Lightning-8steps-V1.0.safetensors
+│   ├── 📂 controlnet/ 
+│   │   └── Qwen-Image-InstantX-ControlNet-Inpainting.safetensors
+│   ├── 📂 vae/
+│   │   └── qwen_image_vae.safetensors
+│   └── 📂 text_encoders/
+│       └── qwen_2.5_vl_7b_fp8_scaled.safetensors
+```
+
+**Note: KSampler settings**
+You can test and find the best setting by yourself. The following table is for reference.
+| Parameters   | Qwen Team | Comfy Original | with 4steps LoRA |
+|--------|---------|------------|---------------------------|
+| Steps  | 50      | 20         | 4                         |
+| CFG    | 4.0     | 2.5        | 1.0                       |
+
+Set cfg to 1.0 for a speed boost at the cost of consistency. Samplers like res_multistep work pretty well at cfg 1.0
+
+The official number of steps is 50 but I think that's too much. Even just 10 steps seems to work.
+
+Increase the shift if you get too many blury/dark/bad images. Decrease if you want to try increasing detail.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `375729975350303` | Random seed (use -1 for random) |
+| `steps` | int | `4` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+The Queen, on a throne, surrounded by Knights, HD, Realistic, Octane Render, Unreal engine
+```
+
+## Default Negative Prompt
+
+```
+ 
+```
+
+## Usage
+
+```bash
+c3 comfyui run image_qwen_image_instantx_inpainting_controlnet \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 4 \
+  --cfg 1
+```
+
+## Required Models
+
+- `qwen_image_fp8_e4m3fn.safetensors` (UNETLoader)
+- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (CLIPLoader)
+- `qwen_image_vae.safetensors` (VAELoader)

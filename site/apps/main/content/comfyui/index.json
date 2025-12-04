@@ -1,0 +1,368 @@
+{
+  "templates": [
+    {
+      "template_id": "video_wan2_2_14B_animate",
+      "title": "Wan2.2 Animate, Character Animation and Replacement",
+      "description": "Unified character animation and replacement framework with precise motion and expression replication.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Video",
+        "Image to Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_flf2v",
+      "title": "Wan 2.2 14B First-Last Frame to Video",
+      "description": "Generate smooth video transitions by defining start and end frames.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "FLF2V",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_fun_camera",
+      "title": "Wan 2.2 14B Fun Camera Control",
+      "description": "Generate videos with camera motion controls including pan, zoom, and rotation using Wan 2.2 Fun Camera Control.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Video to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_fun_control",
+      "title": "Wan 2.2 14B Fun Control",
+      "description": "Generate videos guided by pose, depth, and edge controls using Wan 2.2 Fun Control.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Video to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_fun_inpaint",
+      "title": "Wan 2.2 14B Fun Inp",
+      "description": "Generate videos from start and end frames using Wan 2.2 Fun Inp.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "FLF2V",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_i2v",
+      "title": "Wan 2.2 14B Image to Video",
+      "description": "Transform static images into dynamic videos with precise motion control and style preservation using Wan 2.2.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Image to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_s2v",
+      "title": "Wan2.2-S2V Audio-Driven Video Generation",
+      "description": "Transform static images and audio into dynamic videos with perfect synchronization and minute-level generation.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_wan2_2_14B_t2v",
+      "title": "Wan 2.2 14B Text to Video",
+      "description": "Generate high-quality videos from text prompts with cinematic aesthetic control and dynamic motion generation using Wan 2.2.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Text to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_humo",
+      "title": "HuMo Video Generation",
+      "description": "Generate videos basic on audio, image, and text, keep the character's lip sync.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_hunyuan_video_1.5_720p_i2v",
+      "title": "Hunyuan Video 1.5 Image to Video",
+      "description": "Animate still images into dynamic videos with precise motion and camera control. Maintains visual consistency while bringing photos and illustrations to life with smooth, natural movements.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Image to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "video_hunyuan_video_1.5_720p_t2v",
+      "title": "Hunyuan Video 1.5 Text to Video",
+      "description": "Generate high-quality 720p videos from text prompts with cinematic camera control, emotional expressions, and physics simulation. Supports multiple styles including realistic, anime, and 3D with text rendering.",
+      "bundle": "media-video",
+      "output_type": "video",
+      "tags": [
+        "Text to Video",
+        "Video"
+      ]
+    },
+    {
+      "template_id": "hidream_e1_1",
+      "title": "HiDream E1.1 Image Edit",
+      "description": "Edit images with HiDream E1.1 \u2013 it\u2019s better in image quality and editing accuracy than HiDream-E1-Full.",
+      "bundle": "media-other",
+      "output_type": "image",
+      "tags": [
+        "Image Edit",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "hidream_e1_full",
+      "title": "HiDream E1 Image Edit",
+      "description": "Edit images with HiDream E1 - Professional natural language image editing model.",
+      "bundle": "media-other",
+      "output_type": "image",
+      "tags": [
+        "Image Edit",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "hidream_i1_dev",
+      "title": "HiDream I1 Dev",
+      "description": "Generate images with HiDream I1 Dev - Balanced version with 28 inference steps, suitable for medium-range hardware.",
+      "bundle": "media-other",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "hidream_i1_fast",
+      "title": "HiDream I1 Fast",
+      "description": "Generate images quickly with HiDream I1 Fast - Lightweight version with 16 inference steps, ideal for rapid previews on lower-end hardware.",
+      "bundle": "media-other",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "hidream_i1_full",
+      "title": "HiDream I1 Full",
+      "description": "Generate images with HiDream I1 Full - Complete version with 50 inference steps for highest quality output.",
+      "bundle": "media-other",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "3d_hunyuan3d-v2.1",
+      "title": "Hunyuan3D 2.1",
+      "description": "Generate 3D models from single images using Hunyuan3D 2.1.",
+      "bundle": "media-other",
+      "output_type": "3D",
+      "tags": [
+        "Image to 3D",
+        "3D"
+      ]
+    },
+    {
+      "template_id": "3d_hunyuan3d_multiview_to_model",
+      "title": "Hunyuan3D 2.0 MV",
+      "description": "Generate 3D models from multiple views using Hunyuan3D 2.0 MV.",
+      "bundle": "media-other",
+      "output_type": "3D",
+      "tags": [
+        "3D",
+        "Image to 3D"
+      ]
+    },
+    {
+      "template_id": "3d_hunyuan3d_multiview_to_model_turbo",
+      "title": "Hunyuan3D 2.0 MV Turbo",
+      "description": "Generate 3D models from multiple views using Hunyuan3D 2.0 MV Turbo.",
+      "bundle": "media-other",
+      "output_type": "3D",
+      "tags": [
+        "Image to 3D",
+        "3D"
+      ]
+    },
+    {
+      "template_id": "image_qwen_image",
+      "title": "Qwen-Image Text to Image",
+      "description": "Generate images with exceptional multilingual text rendering and editing capabilities using Qwen-Image's 20B MMDiT model.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "image_qwen_image_edit_2509",
+      "title": "Qwen Image Edit 2509",
+      "description": "Advanced image editing with multi-image support, improved consistency, and ControlNet integration.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "Image Edit",
+        "ControlNet"
+      ]
+    },
+    {
+      "template_id": "image_qwen_image_instantx_controlnet",
+      "title": "Qwen-Image InstantX Union ControlNet",
+      "description": "Generate images with Qwen-Image InstantX ControlNet, supporting canny, soft edge, depth, pose",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "Image",
+        "ControlNet"
+      ]
+    },
+    {
+      "template_id": "image_qwen_image_instantx_inpainting_controlnet",
+      "title": "Qwen-Image InstantX Inpainting ControlNet",
+      "description": "Professional inpainting and image editing with Qwen-Image InstantX ControlNet. Supports object replacement, text modification, background changes, and outpainting.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "Image",
+        "ControlNet",
+        "Inpainting"
+      ]
+    },
+    {
+      "template_id": "image_qwen_image_union_control_lora",
+      "title": "Qwen-Image Union Control",
+      "description": "Generate images with precise structural control using Qwen-Image's unified ControlNet LoRA. Supports multiple control types including canny, depth, lineart, softedge, normal, and openpose for diverse creative applications.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image",
+        "ControlNet"
+      ]
+    },
+    {
+      "template_id": "flux_dev_full_text_to_image",
+      "title": "Flux Dev Full Text to Image",
+      "description": "Generate high-quality images with Flux Dev full version. Requires larger VRAM and multiple model files, but provides the best prompt following capability and image quality.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "flux_fill_inpaint_example",
+      "title": "Flux Inpaint",
+      "description": "Fill missing parts of images using Flux inpainting.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "Inpainting",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "flux_fill_outpaint_example",
+      "title": "Flux Outpaint",
+      "description": "Extend images beyond boundaries using Flux outpainting.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Outpainting",
+        "Image",
+        "Image to Image"
+      ]
+    },
+    {
+      "template_id": "flux_kontext_dev_basic",
+      "title": "Flux Kontext Dev Image Edit",
+      "description": "Smart image editing that keeps characters consistent, edits specific parts without affecting others, and preserves original styles.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image Edit",
+        "Image to Image"
+      ]
+    },
+    {
+      "template_id": "flux_redux_model_example",
+      "title": "Flux Redux Model",
+      "description": "Generate images by transferring style from reference images using Flux Redux.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "ControlNet",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "flux_schnell",
+      "title": "Flux Schnell FP8",
+      "description": "Quickly generate images with Flux Schnell fp8 quantized version. Ideal for low-end hardware, requires only 4 steps to generate images.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "flux_schnell_full_text_to_image",
+      "title": "Flux Schnell Full Text to Image",
+      "description": "Generate images quickly with Flux Schnell full version. Uses Apache2.0 license, requires only 4 steps to generate images while maintaining good image quality.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Text to Image",
+        "Image"
+      ]
+    },
+    {
+      "template_id": "image2image",
+      "title": "Image to Image",
+      "description": "Transform existing images using text prompts.",
+      "bundle": "media-image",
+      "output_type": "image",
+      "tags": [
+        "Image to Image",
+        "Image"
+      ]
+    }
+  ],
+  "bundles": [
+    "media-image",
+    "media-other",
+    "media-video"
+  ],
+  "count": 32
+}

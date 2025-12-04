@@ -14,6 +14,144 @@ if TYPE_CHECKING:
     from ..client import C3
 
 
+# Default object_info for offline workflow conversion (no running instance needed)
+# This covers common node types - extend as needed for new workflows
+DEFAULT_OBJECT_INFO = {
+    # Text encoders
+    "CLIPTextEncode": {
+        "input": {"required": {"clip": ["CLIP"], "text": ["STRING", {"multiline": True}]}, "optional": {}},
+        "input_order": {"required": ["clip", "text"], "optional": []},
+    },
+    "CLIPLoader": {
+        "input": {"required": {"clip_name": [["model.safetensors"], {}], "type": [["stable_diffusion", "wan"], {}], "device": [["default", "cpu"], {}]}, "optional": {}},
+        "input_order": {"required": ["clip_name", "type", "device"], "optional": []},
+    },
+    # Samplers
+    "KSampler": {
+        "input": {
+            "required": {
+                "model": ["MODEL"], "positive": ["CONDITIONING"], "negative": ["CONDITIONING"], "latent_image": ["LATENT"],
+                "seed": ["INT", {"default": 0}], "steps": ["INT", {"default": 20}], "cfg": ["FLOAT", {"default": 8.0}],
+                "sampler_name": [["euler", "euler_ancestral", "dpm_2"], {}], "scheduler": [["normal", "karras", "simple"], {}],
+                "denoise": ["FLOAT", {"default": 1.0}],
+            },
+            "optional": {},
+        },
+        "input_order": {"required": ["model", "positive", "negative", "latent_image", "seed", "steps", "cfg", "sampler_name", "scheduler", "denoise"], "optional": []},
+    },
+    "KSamplerAdvanced": {
+        "input": {
+            "required": {
+                "model": ["MODEL"], "positive": ["CONDITIONING"], "negative": ["CONDITIONING"], "latent_image": ["LATENT"],
+                "add_noise": [["enable", "disable"], {}], "noise_seed": ["INT", {"default": 0}],
+                "steps": ["INT", {"default": 20}], "cfg": ["FLOAT", {"default": 8.0}],
+                "sampler_name": [["euler", "euler_ancestral"], {}], "scheduler": [["normal", "simple"], {}],
+                "start_at_step": ["INT", {"default": 0}], "end_at_step": ["INT", {"default": 10000}],
+                "return_with_leftover_noise": [["disable", "enable"], {}],
+            },
+            "optional": {},
+        },
+        "input_order": {
+            "required": ["model", "positive", "negative", "latent_image", "add_noise", "noise_seed", "steps", "cfg", "sampler_name", "scheduler", "start_at_step", "end_at_step", "return_with_leftover_noise"],
+            "optional": [],
+        },
+    },
+    # Latent generators
+    "EmptyLatentImage": {
+        "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
+        "input_order": {"required": ["width", "height", "batch_size"], "optional": []},
+    },
+    "EmptySD3LatentImage": {
+        "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
+        "input_order": {"required": ["width", "height", "batch_size"], "optional": []},
+    },
+    "EmptyHunyuanLatentVideo": {
+        "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "length": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
+        "input_order": {"required": ["width", "height", "length", "batch_size"], "optional": []},
+    },
+    # Model loaders
+    "UNETLoader": {
+        "input": {"required": {"unet_name": [["model.safetensors"], {}], "weight_dtype": [["default", "fp8_e4m3fn"], {}]}, "optional": {}},
+        "input_order": {"required": ["unet_name", "weight_dtype"], "optional": []},
+    },
+    "VAELoader": {
+        "input": {"required": {"vae_name": [["vae.safetensors"], {}]}, "optional": {}},
+        "input_order": {"required": ["vae_name"], "optional": []},
+    },
+    "CheckpointLoaderSimple": {
+        "input": {"required": {"ckpt_name": [["model.safetensors"], {}]}, "optional": {}},
+        "input_order": {"required": ["ckpt_name"], "optional": []},
+    },
+    "LoraLoaderModelOnly": {
+        "input": {"required": {"model": ["MODEL"], "lora_name": [["lora.safetensors"], {}], "strength_model": ["FLOAT", {}]}, "optional": {}},
+        "input_order": {"required": ["model", "lora_name", "strength_model"], "optional": []},
+    },
+    "ModelSamplingSD3": {
+        "input": {"required": {"model": ["MODEL"], "shift": ["FLOAT", {}]}, "optional": {}},
+        "input_order": {"required": ["model", "shift"], "optional": []},
+    },
+    # Video/Image processing
+    "VAEDecode": {
+        "input": {"required": {"samples": ["LATENT"], "vae": ["VAE"]}, "optional": {}},
+        "input_order": {"required": ["samples", "vae"], "optional": []},
+    },
+    "VAEEncode": {
+        "input": {"required": {"pixels": ["IMAGE"], "vae": ["VAE"]}, "optional": {}},
+        "input_order": {"required": ["pixels", "vae"], "optional": []},
+    },
+    "CreateVideo": {
+        "input": {"required": {"images": ["IMAGE"], "fps": ["FLOAT", {"default": 16}]}, "optional": {"audio": ["AUDIO"]}},
+        "input_order": {"required": ["images", "fps"], "optional": ["audio"]},
+    },
+    # Save nodes
+    "SaveVideo": {
+        "input": {
+            "required": {
+                "video": ["VIDEO"],
+                "filename_prefix": ["STRING", {"default": "video/ComfyUI"}],
+                "format": ["COMBO", {"default": "auto", "options": ["auto", "mp4"]}],
+                "codec": ["COMBO", {"default": "auto", "options": ["auto", "h264"]}],
+            },
+            "optional": {},
+        },
+        "input_order": {"required": ["video", "filename_prefix", "format", "codec"], "optional": []},
+    },
+    "SaveImage": {
+        "input": {"required": {"images": ["IMAGE"], "filename_prefix": ["STRING", {}]}, "optional": {}},
+        "input_order": {"required": ["images", "filename_prefix"], "optional": []},
+    },
+    "SaveAnimatedWEBP": {
+        "input": {"required": {"images": ["IMAGE"], "filename_prefix": ["STRING", {}], "fps": ["FLOAT", {}], "lossless": ["BOOLEAN", {}], "quality": ["INT", {}], "method": [["default"], {}]}, "optional": {}},
+        "input_order": {"required": ["images", "filename_prefix", "fps", "lossless", "quality", "method"], "optional": []},
+    },
+}
+
+
+def load_template(template_id: str) -> dict:
+    """
+    Load workflow template from comfyui-workflow-templates package.
+
+    Args:
+        template_id: Template name (e.g., "video_wan2_2_14B_t2v")
+
+    Returns:
+        Workflow in graph format (nodes array, links array)
+
+    Requires: pip install comfyui-workflow-templates comfyui-workflow-templates-media-image
+    """
+    try:
+        from comfyui_workflow_templates import get_asset_path
+    except ImportError:
+        raise ImportError(
+            "comfyui-workflow-templates not installed. "
+            "Run: pip install comfyui-workflow-templates comfyui-workflow-templates-media-image"
+        )
+
+    workflow_path = get_asset_path(template_id, f"{template_id}.json")
+    with open(workflow_path) as f:
+        return json.load(f)
+
+
 def _value_matches_type(value, input_spec) -> bool:
     """Check if a widget value matches the expected input type."""
     if input_spec is None:
@@ -208,18 +346,20 @@ def apply_params(workflow: dict, **params) -> dict:
     return workflow
 
 
-def graph_to_api(graph: dict, object_info: dict, debug: bool = False) -> dict:
+def graph_to_api(graph: dict, object_info: dict = None, debug: bool = False) -> dict:
     """
     Convert ComfyUI graph format (from UI) to API format (for /prompt endpoint).
 
     Args:
         graph: Workflow in graph format (nodes array, links array)
-        object_info: Node schemas from /object_info endpoint
+        object_info: Node schemas from /object_info endpoint (uses DEFAULT_OBJECT_INFO if None)
         debug: If True, print debug info about conversion
 
     Returns:
         Workflow in API format (node IDs as keys)
     """
+    if object_info is None:
+        object_info = DEFAULT_OBJECT_INFO
     api = {}
 
     # Build node lookup

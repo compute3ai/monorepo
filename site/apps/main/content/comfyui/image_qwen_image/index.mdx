@@ -1,0 +1,126 @@
+---
+title: "Qwen-Image Text to Image"
+description: "Generate images with exceptional multilingual text rendering and editing capabilities using Qwen-Image's 20B MMDiT model."
+template_id: "image_qwen_image"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/image_qwen_image/thumbnail.webp"
+tags: ["Text to Image", "Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/qwen/qwen-image"
+date: "2025-08-05"
+models: ["qwen_image_fp8_e4m3fn.safetensors", "qwen_2.5_vl_7b_fp8_scaled.safetensors", "qwen_image_vae.safetensors"]
+---
+
+# Qwen-Image Text to Image
+
+![thumbnail](/comfyui/image_qwen_image/thumbnail.webp)
+
+## About
+
+**VRAM Usage**
+## GPU:RTX4090D 24GB
+
+| Configuration            | VRAM Usage | 1st Generation | 2nd Generation |
+|---------------------|---------------|---------------|-----------------|
+| Fp8_e4m3fn             | 86%                | ≈ 94s               | ≈ 71s                   |
+| With 8steps LoRA    | 86%                | ≈ 55s               | ≈ 34s                  |
+| Distill fp8_e4m3fn   | 86%                | ≈ 69s               | ≈ 36s                  |
+
+**KSampler settings**
+You can test and find the best setting by yourself. The following table is for reference.
+
+| model            | steps | cfg |
+|---------------------|---------------|---------------|
+| fp8_e4m3fn（Qwen team's suggestion）             | 40                | 2.5               
+| fp8_e4m3fn             | 20                | 2.5               |
+| fp8_e4m3fn + 8steps LoRA    | 8               | 1.0               |
+| distill fp8_e4m3fn   | 10               | 1.0              |
+
+**Model links**
+[Tutorial](https://docs.comfy.org/tutorials/image/qwen/qwen-image) 
+
+## Model links
+
+You can find all the models on [Huggingface](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main) or [Modelscope](https://modelscope.cn/models/Comfy-Org/Qwen-Image_ComfyUI/files)
+
+**Diffusion model**
+
+- [qwen_image_fp8_e4m3fn.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors)
+
+Qwen_image_distill
+
+- [qwen_image_distill_full_fp8_e4m3fn.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/non_official/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors)
+- [qwen_image_distill_full_bf16.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/non_official/diffusion_models/qwen_image_distill_full_bf16.safetensors)
+
+**LoRA**
+
+- [Qwen-Image-Lightning-8steps-V1.0.safetensors](https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.0.safetensors)
+
+**Text encoder**
+
+- [qwen_2.5_vl_7b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors)
+
+**VAE**
+
+- [qwen_image_vae.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors)
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 diffusion_models/
+│   │   ├── qwen_image_fp8_e4m3fn.safetensors
+│   │   └── qwen_image_distill_full_fp8_e4m3fn.safetensors
+│   ├── 📂 loras/
+│   │   └── Qwen-Image-Lightning-8steps-V1.0.safetensors
+│   ├── 📂 vae/
+│   │   └── qwen_image_vae.safetensors
+│   └── 📂 text_encoders/
+│       └── qwen_2.5_vl_7b_fp8_scaled.safetensors
+```
+
+Increase the shift if you get too many blury/dark/bad images. Decrease if you want to try increasing detail.
+
+**For fp8 without 8steps LoRA**
+Set cfg to 1.0 for a speed boost at the cost of consistency. Samplers like res_multistep work pretty well at cfg 1.0
+
+The official number of steps is 50 but I think that's too much. Even just 10 steps seems to work.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `width` | int | `1328` | Output width in pixels |
+| `height` | int | `1328` | Output height in pixels |
+| `seed` | int | `1125488487853216` | Random seed (use -1 for random) |
+| `steps` | int | `20` | Number of sampling steps |
+| `cfg` | float | `2.5` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+"A vibrant, warm neon-lit street scene in Hong Kong at the afternoon, with a mix of colorful Chinese and English signs glowing brightly. The atmosphere is lively, cinematic, and rain-washed with reflections on the pavement. The colors are vivid, full of pink, blue, red, and green hues. Crowded buildings with overlapping neon signs. 1980s Hong Kong style. Signs include:
+"龍鳳冰室" "金華燒臘" "HAPPY HAIR" "鴻運茶餐廳" "EASY BAR" "永發魚蛋粉" "添記粥麵" "SUNSHINE MOTEL" "美都餐室" "富記糖水" "太平館" "雅芳髮型屋" "STAR KTV" "銀河娛樂城" "百樂門舞廳" "BUBBLE CAFE" "萬豪麻雀館" "CITY LIGHTS BAR" "瑞祥香燭莊" "文記文具" "GOLDEN JADE HOTEL" "LOVELY BEAUTY" "合興百貨" "興旺電器" And the background is warm yellow street and with all stores' lights on.
+```
+
+## Usage
+
+```bash
+c3 comfyui run image_qwen_image \
+  --prompt "your prompt here" \
+  --output my_output \
+  --width 1328 \
+  --height 1328 \
+  --steps 20 \
+  --cfg 2.5
+```
+
+## Required Models
+
+- `qwen_image_fp8_e4m3fn.safetensors` (UNETLoader)
+- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (CLIPLoader)
+- `qwen_image_vae.safetensors` (VAELoader)

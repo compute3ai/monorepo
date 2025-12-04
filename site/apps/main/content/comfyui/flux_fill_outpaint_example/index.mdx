@@ -1,0 +1,84 @@
+---
+title: "Flux Outpaint"
+description: "Extend images beyond boundaries using Flux outpainting."
+template_id: "flux_fill_outpaint_example"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/flux_fill_outpaint_example/thumbnail.webp"
+tags: ["Outpainting", "Image", "Image to Image"]
+tutorial_url: "https://docs.comfy.org/tutorials/flux/flux-1-fill-dev"
+date: "2025-03-01"
+models: ["flux1-fill-dev.safetensors", "ae.safetensors"]
+---
+
+# Flux Outpaint
+
+![thumbnail](/comfyui/flux_fill_outpaint_example/thumbnail.webp)
+
+## About
+
+**Note: Model links**
+[Tutorial](https://docs.comfy.org/tutorials/flux/flux-1-fill-dev)
+
+
+## Model links
+
+**text_encoders**
+
+- [clip_l.safetensors](https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors?download=true)
+- [t5xxl_fp16.safetensors](https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors?download=true)
+
+**diffusion_models**
+
+- [flux1-fill-dev.safetensors](https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/split_files/diffusion_models/flux1-fill-dev.safetensors)
+
+**vae**
+
+- [ae.safetensors](https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/vae/ae.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 text_encoders/
+│   │      ├── clip_l.safetensors
+│   │      └── t5xxl_fp16.safetensors
+│   ├── 📂 diffusion_models/
+│   │      └── flux1-fill-dev.safetensors
+│   └── 📂 vae/
+│          └── ae.safetensors
+```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `164211176398261` | Random seed (use -1 for random) |
+| `steps` | int | `20` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `normal` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+beautiful scenery
+```
+
+## Usage
+
+```bash
+c3 comfyui run flux_fill_outpaint_example \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 20 \
+  --cfg 1
+```
+
+## Required Models
+
+- `flux1-fill-dev.safetensors` (UNETLoader)
+- `ae.safetensors` (VAELoader)

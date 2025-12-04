@@ -1,0 +1,146 @@
+---
+title: "Qwen-Image InstantX Union ControlNet"
+description: "Generate images with Qwen-Image InstantX ControlNet, supporting canny, soft edge, depth, pose"
+template_id: "image_qwen_image_instantx_controlnet"
+bundle: "media-image"
+output_type: "image"
+thumbnail: "/comfyui/image_qwen_image_instantx_controlnet/thumbnail.webp"
+tags: ["Image to Image", "Image", "ControlNet"]
+tutorial_url: "https://docs.comfy.org/tutorials/image/qwen/qwen-image"
+date: "2025-08-23"
+models: ["qwen_image_fp8_e4m3fn.safetensors", "qwen_2.5_vl_7b_fp8_scaled.safetensors", "qwen_image_vae.safetensors"]
+---
+
+# Qwen-Image InstantX Union ControlNet
+
+![thumbnail](/comfyui/image_qwen_image_instantx_controlnet/thumbnail.webp)
+
+## About
+
+**KSampler settings**
+You can test and find the best setting by yourself. The following table is for reference.
+
+| model            | steps | cfg |
+|---------------------|---------------|---------------|
+| fp8_e4m3fn             | 20                | 2.5               |
+| fp8_e4m3fn + 4 Steps lightning LoRA    | 4               | 1.0               |
+
+**About Lotus Depth**
+"It's a subgraph. Double-click on the node or click the icon on the top-left to learn how it works.
+
+You can use any SD1.5 VAE.
+
+Or you can use the canny node if you want to use the canny control.
+
+**Lotus Depth**
+**Diffusion Model**
+
+Download [lotus-depth-d-v1-1.safetensors](https://huggingface.co/Comfy-Org/lotus/resolve/main/lotus-depth-d-v1-1.safetensors) 
+ and place it in **ComfyUI/models/diffusion_models**
+
+**VAE Model**
+
+Download  [vae-ft-mse-840000-ema-pruned.safetensors](https://huggingface.co/stabilityai/sd-vae-ft-mse-original/resolve/main/vae-ft-mse-840000-ema-pruned.safetensors)  and place it in **ComfyUI/models/vae** or you can use any SD1.5 VAE if you prefer.
+
+
+```
+ComfyUI/
+├── models/
+│   ├── diffusion_models/
+│   │   └─── lotus-depth-d-v1-1.safetensors
+│   └── vae/
+│       └──  lvae-ft-mse-840000-ema-pruned.safetensors
+```
+
+**Model links**
+[Tutorial](https://docs.comfy.org/tutorials/image/qwen/qwen-image) 
+
+
+## Model links
+
+You can find all the models on [Huggingface](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main) or [Modelscope](https://modelscope.cn/models/Comfy-Org/Qwen-Image_ComfyUI/files)
+
+**Diffusion model**
+
+- [qwen_image_fp8_e4m3fn.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_fp8_e4m3fn.safetensors)
+
+**ControlNet**
+
+- [Qwen-Image-InstantX-ControlNet-Union.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image-InstantX-ControlNets/resolve/main/split_files/controlnet/Qwen-Image-InstantX-ControlNet-Union.safetensors)
+
+
+**LoRA**
+
+- [Qwen-Image-Lightning-4steps-V1.0.safetensors](https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-4steps-V1.0.safetensors)
+
+**Text encoder**
+
+- [qwen_2.5_vl_7b_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors)
+
+**VAE**
+
+- [qwen_image_vae.safetensors](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors)
+
+
+Model Storage Location
+
+```
+📂 ComfyUI/
+├── 📂 models/
+│   ├── 📂 diffusion_models/
+│   │   ├── qwen_image_fp8_e4m3fn.safetensors
+│   │   └── qwen_image_distill_full_fp8_e4m3fn.safetensors
+│   ├── 📂 loras/
+│   │   └── Qwen-Image-Lightning-8steps-V1.0.safetensors
+│   ├── 📂 controlnet/ 
+│   │   └── Qwen-Image-InstantX-ControlNet-Union.safetensors
+│   ├── 📂 vae/
+│   │   └── qwen_image_vae.safetensors
+│   └── 📂 text_encoders/
+│       └── qwen_2.5_vl_7b_fp8_scaled.safetensors
+```
+
+Increase the shift if you get too many blury/dark/bad images. Decrease if you want to try increasing detail.
+
+Set cfg to 1.0 for a speed boost at the cost of consistency. Samplers like res_multistep work pretty well at cfg 1.0
+
+The official number of steps is 50 but I think that's too much. Even just 10 steps seems to work.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `452179129219851` | Random seed (use -1 for random) |
+| `steps` | int | `20` | Number of sampling steps |
+| `cfg` | float | `2.5` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+Post-apocalyptic style clothing, long wavy hair, rough texture, exotic woman, tattered coarse-woven linen fabric, wearing a hood, mechanical aesthetics, mainly in dark gray tones, low-saturation earthy yellow, sense of impact and rebellion, doomsday aesthetics, grotesque aesthetics, works of art, backlighting, film photography, professional photography works, clear visible face, emotional and atmospheric dynamic photography, Fujichrome color positive film, shot with a 17mm Hasselblad ultra-wide-angle lens, f/1.2 large aperture, side backlighting, artistic light, hair light, Rembrandt light, 8K high-definition image quality, delicate real human skin texture.
+```
+
+## Default Negative Prompt
+
+```
+ 
+```
+
+## Usage
+
+```bash
+c3 comfyui run image_qwen_image_instantx_controlnet \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 20 \
+  --cfg 2.5
+```
+
+## Required Models
+
+- `qwen_image_fp8_e4m3fn.safetensors` (UNETLoader)
+- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (CLIPLoader)
+- `qwen_image_vae.safetensors` (VAELoader)

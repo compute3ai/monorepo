@@ -1,0 +1,103 @@
+---
+title: "Wan 2.2 14B Fun Inp"
+description: "Generate videos from start and end frames using Wan 2.2 Fun Inp."
+template_id: "video_wan2_2_14B_fun_inpaint"
+bundle: "media-video"
+output_type: "video"
+thumbnail: "/comfyui/video_wan2_2_14B_fun_inpaint/thumbnail.webp"
+tags: ["FLF2V", "Video"]
+tutorial_url: "https://docs.comfy.org/tutorials/video/wan/wan2-2-fun-inp"
+date: "2025-08-12"
+models: ["wan2.2_fun_inpaint_high_noise_14B_fp8_scaled.safetensors", "wan2.2_fun_inpaint_low_noise_14B_fp8_scaled.safetensors", "umt5_xxl_fp8_e4m3fn_scaled.safetensors", "wan_2.1_vae.safetensors"]
+---
+
+# Wan 2.2 14B Fun Inp
+
+![thumbnail](/comfyui/video_wan2_2_14B_fun_inpaint/thumbnail.webp)
+
+## About
+
+1. Box-select then use Ctrl + B to enable
+2. If you don't want to run both groups simultaneously, don't forget to use **Ctrl + B** to disable the **fp8_scaled + 4steps LoRA** group after enabling the **fp8_scaled** group, or try the [partial - execution](https://docs.comfy.org/interface/features/partial-execution) feature.
+
+**Model Links**
+[Tutorial](https://docs.comfy.org/tutorials/video/wan/wan2-2-fun-inp
+) 
+
+**Diffusion Model**
+- [wan2.2_fun_inpaint_high_noise_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_fun_inpaint_high_noise_14B_fp8_scaled.safetensors)
+- [wan2.2_fun_inpaint_low_noise_14B_fp8_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/diffusion_models/wan2.2_fun_inpaint_low_noise_14B_fp8_scaled.safetensors)
+
+**LoRA**
+- [wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors)
+- [wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors)
+
+**VAE**
+- [wan_2.1_vae.safetensors](https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors)
+
+**Text Encoder**   
+- [umt5_xxl_fp8_e4m3fn_scaled.safetensors](https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors)
+
+
+File save location
+
+```
+ComfyUI/
+├───📂 models/
+│   ├───📂 diffusion_models/
+│   │   ├─── wan2.2_fun_inpaint_high_noise_14B_fp8_scaled.safetensors
+│   │   └─── wan2.2_fun_inpaint_low_noise_14B_fp8_scaled.safetensors
+│   ├───📂 loras/
+│   │   ├─── wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors
+│   │   └─── wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors
+│   ├───📂 text_encoders/
+│   │   └─── umt5_xxl_fp8_e4m3fn_scaled.safetensors 
+│   └───📂 vae/
+│       └── wan_2.1_vae.safetensors
+```
+
+**Video Size**
+By default, we set the video to a smaller size for users with low VRAM. If you have enough VRAM, you can change the size
+
+**About 4 Steps LoRA**
+Using the Wan2.2 Lighting LoRA will result in the loss of video dynamics, but it will reduce the generation time. This template provides two workflows, and you can enable one as needed.
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | int | `221824495232956` | Random seed |
+| `steps` | int | `4` | Number of sampling steps |
+| `cfg` | float | `1` | CFG scale (guidance strength) |
+| `sampler_name` | enum | `euler` | Sampler algorithm |
+| `scheduler` | enum | `simple` | Noise scheduler |
+| `filename_prefix` | string | `video/ComfyUI` | Output filename prefix |
+
+## Example Prompt
+
+```
+A dreamy scene where a little cat is sleeping. Zoom in, and the cat opens its eyes, looks up, and blinks. In Q-style, with ice crystals.
+```
+
+## Default Negative Prompt
+
+```
+色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走
+```
+
+## Usage
+
+```bash
+c3 comfyui run video_wan2_2_14B_fun_inpaint \
+  --prompt "your prompt here" \
+  --output my_output \
+  --steps 4 \
+  --cfg 1
+```
+
+## Required Models
+
+- `wan2.2_fun_inpaint_high_noise_14B_fp8_scaled.safetensors` (UNETLoader)
+- `wan2.2_fun_inpaint_low_noise_14B_fp8_scaled.safetensors` (UNETLoader)
+- `umt5_xxl_fp8_e4m3fn_scaled.safetensors` (CLIPLoader)
+- `wan_2.1_vae.safetensors` (VAELoader)

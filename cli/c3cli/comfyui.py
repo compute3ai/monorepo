@@ -7,7 +7,7 @@ from typing import Optional
 
 import typer
 
-from c3 import C3, ComfyUIJob, APIError, apply_params
+from c3 import C3, ComfyUIJob, APIError, apply_params, load_template, graph_to_api
 from .output import console, error, success, spinner
 from .tui import JobStatus, run_job_monitor
 
@@ -204,8 +204,52 @@ def run(
     auth: bool = typer.Option(False, "--auth", help="Enable Bearer token auth on load balancer"),
     stdout: bool = typer.Option(False, "--stdout", help="Output to stdout instead of TUI"),
     debug: bool = typer.Option(False, "--debug", help="Debug mode: stdout + verbose errors"),
+    workflow_json: bool = typer.Option(False, "--workflow-json", help="Output generated workflow JSON and exit (don't run)"),
 ):
     """Run a ComfyUI workflow template"""
+
+    # --workflow-json: generate JSON offline and exit (no instance needed)
+    if workflow_json:
+        import json as json_module
+
+        # Build params
+        if seed is not None:
+            iteration_seed = seed
+        elif random_seed or num > 1:
+            iteration_seed = random.randint(0, 2**32 - 1)
+        else:
+            iteration_seed = None
+
+        params = {
+            "prompt": prompt,
+            "negative": negative,
+            "width": width,
+            "height": height,
+            "steps": steps,
+            "cfg": cfg,
+            "filename_prefix": output,
+        }
+        if iteration_seed is not None:
+            params["seed"] = iteration_seed
+
+        try:
+            graph = load_template(template)
+            workflow = graph_to_api(graph, debug=debug)
+            apply_params(workflow, **params)
+
+            # Output JSON to stdout
+            print(json_module.dumps(workflow, indent=2))
+        except ImportError as e:
+            error(str(e))
+            raise typer.Exit(1)
+        except Exception as e:
+            error(f"Failed to generate workflow: {e}")
+            if debug:
+                import traceback
+                console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+        raise typer.Exit(0)
+
     c3 = get_client()
 
     # Get or create job
