@@ -72,6 +72,8 @@ export default function JobDetailPage() {
   const hasConnectedToWSRef = useRef<boolean>(false);
   const hasFetchedLogsRef = useRef<boolean>(false);
   const hasFetchedTokenRef = useRef<boolean>(false);
+  const logBufferRef = useRef<string[]>([]);
+  const logFlushIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [alertDialog, setAlertDialog] = useState<{
     isOpen: boolean;
     title: string;
@@ -179,6 +181,9 @@ export default function JobDetailPage() {
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
+      }
+      if (logFlushIntervalRef.current) {
+        clearInterval(logFlushIntervalRef.current);
       }
       stopPolling();
     };
@@ -387,11 +392,19 @@ export default function JobDetailPage() {
     }
   };
 
+  const flushLogBuffer = () => {
+    if (logBufferRef.current.length > 0) {
+      const newLogs = logBufferRef.current;
+      logBufferRef.current = [];
+      setLiveLogs(prev => [...prev, ...newLogs]);
+    }
+  };
+
   const connectWebSocket = (jobKey: string) => {
     if (wsRef.current) return;
 
     const wsUrl = process.env.NEXT_PUBLIC_WS_URL || '';
-    const fullWsUrl = `${wsUrl}/ws/logs/${jobKey}`;
+    const fullWsUrl = `${wsUrl}/logs/${jobKey}`;
 
     setWsStatus('connecting');
 
@@ -401,13 +414,18 @@ export default function JobDetailPage() {
 
       ws.onopen = () => {
         setWsStatus('connected');
+        // Start flushing log buffer every 100ms
+        if (!logFlushIntervalRef.current) {
+          logFlushIntervalRef.current = setInterval(flushLogBuffer, 100);
+        }
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.event === 'log' && data.log) {
-            setLiveLogs(prev => [...prev, data.log.trimEnd()]);
+            // Buffer logs instead of updating state immediately
+            logBufferRef.current.push(data.log.trimEnd());
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
@@ -422,6 +440,12 @@ export default function JobDetailPage() {
       ws.onclose = () => {
         setWsStatus('disconnected');
         wsRef.current = null;
+        // Flush any remaining logs and stop the interval
+        flushLogBuffer();
+        if (logFlushIntervalRef.current) {
+          clearInterval(logFlushIntervalRef.current);
+          logFlushIntervalRef.current = null;
+        }
       };
     } catch (err) {
       console.error('Failed to connect WebSocket:', err);
