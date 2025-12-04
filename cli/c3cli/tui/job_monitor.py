@@ -134,7 +134,7 @@ def build_layout(job, elapsed, metrics, logs, ws_status, job_status, content_hei
     if job_status:
         log_lines = int(content_height * 0.7)
         log_content = "\n".join(list(logs)[-log_lines:]) if logs else "[dim]Waiting for logs...[/]"
-        log_panel = Panel(log_content, title=f"[bold]Logs[/] ({ws_status})", border_style="yellow", box=box.ROUNDED)
+        log_panel = Panel(log_content, title=f"[bold]Logs[/] ({ws_status})", border_style="yellow", box=box.ROUNDED, height=content_height + 2)
 
         status_panel = build_status_panel(job_status, content_height)
         content_layout = Layout()
@@ -148,7 +148,7 @@ def build_layout(job, elapsed, metrics, logs, ws_status, job_status, content_hei
         )
     else:
         log_content = "\n".join(list(logs)[-content_height:]) if logs else "[dim]Waiting for logs...[/]"
-        log_panel = Panel(log_content, title=f"[bold]Logs[/] ({ws_status})", border_style="yellow", box=box.ROUNDED)
+        log_panel = Panel(log_content, title=f"[bold]Logs[/] ({ws_status})", border_style="yellow", box=box.ROUNDED, height=content_height + 2)
 
         layout.split_column(
             Layout(header, name="header", size=header_height + 2),
