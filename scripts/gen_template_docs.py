@@ -53,6 +53,7 @@ class TemplateModel:
     """A model required by the workflow."""
     filename: str
     loader_type: str  # UNETLoader, CLIPLoader, VAELoader, LoraLoaderModelOnly
+    url: str = ""  # Huggingface URL if available
 
 
 @dataclass
@@ -333,9 +334,21 @@ def _extract_models(info: TemplateInfo, nodes_by_type: dict):
                 filename = widgets[name_idx]
                 if isinstance(filename, str) and filename not in seen:
                     seen.add(filename)
+                    # Try to get URL from node properties
+                    url = ""
+                    props = node.get("properties", {})
+                    models_list = props.get("models", [])
+                    for m in models_list:
+                        if m.get("name") == filename:
+                            url = m.get("url", "")
+                            # Clean up the URL (remove ?download=true)
+                            if url and "?" in url:
+                                url = url.split("?")[0]
+                            break
                     info.models.append(TemplateModel(
                         filename=filename,
-                        loader_type=loader_type
+                        loader_type=loader_type,
+                        url=url
                     ))
 
 
@@ -479,7 +492,10 @@ def generate_mdx(info: TemplateInfo, output_dir: Path, public_dir: Path = None, 
         lines.append("## Required Models")
         lines.append("")
         for m in info.models:
-            lines.append(f"- `{m.filename}` ({m.loader_type})")
+            if m.url:
+                lines.append(f"- [{m.filename}]({m.url}) ({m.loader_type})")
+            else:
+                lines.append(f"- `{m.filename}` ({m.loader_type})")
         lines.append("")
 
     # Write MDX file

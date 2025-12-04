@@ -1,3 +1,4 @@
+import React from "react";
 import { Header, Footer } from "@compute3/shared-ui";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,6 +28,59 @@ type Frontmatter = {
   date: string;
   models: string[];
 };
+
+function renderMarkdownInline(text: string): React.ReactNode {
+  // Split by markdown patterns and render
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    // Check for links [text](url)
+    const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+    if (linkMatch) {
+      parts.push(
+        <a key={key++} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] hover:underline">
+          {linkMatch[1]}
+        </a>
+      );
+      remaining = remaining.slice(linkMatch[0].length);
+      continue;
+    }
+
+    // Check for bold **text**
+    const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/);
+    if (boldMatch) {
+      parts.push(<strong key={key++} className="font-semibold text-gray-900">{boldMatch[1]}</strong>);
+      remaining = remaining.slice(boldMatch[0].length);
+      continue;
+    }
+
+    // Check for code `text`
+    const codeMatch = remaining.match(/^`([^`]+)`/);
+    if (codeMatch) {
+      parts.push(<code key={key++} className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">{codeMatch[1]}</code>);
+      remaining = remaining.slice(codeMatch[0].length);
+      continue;
+    }
+
+    // Find next special character or end
+    const nextSpecial = remaining.search(/\[|\*\*|`/);
+    if (nextSpecial === -1) {
+      parts.push(remaining);
+      break;
+    } else if (nextSpecial === 0) {
+      // Special char but didn't match pattern, treat as text
+      parts.push(remaining[0]);
+      remaining = remaining.slice(1);
+    } else {
+      parts.push(remaining.slice(0, nextSpecial));
+      remaining = remaining.slice(nextSpecial);
+    }
+  }
+
+  return parts.length === 1 ? parts[0] : <>{parts}</>;
+}
 
 function parseMarkdownTable(content: string): { headers: string[]; rows: string[][] } | null {
   const lines = content.trim().split("\n");
@@ -196,8 +250,26 @@ export default async function TemplatePage({ params }: { params: Promise<{ templ
             {sections["About"] && (
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-                <div className="prose prose-gray max-w-none">
-                  <p className="text-gray-600 whitespace-pre-wrap">{sections["About"]}</p>
+                <div className="prose prose-gray max-w-none text-gray-600">
+                  {sections["About"].split("\n\n").map((paragraph, pIdx) => {
+                    // Check if it's a list
+                    if (paragraph.trim().startsWith("- ")) {
+                      const items = paragraph.split("\n").filter(l => l.trim().startsWith("- "));
+                      return (
+                        <ul key={pIdx} className="list-disc list-inside space-y-1 my-3">
+                          {items.map((item, iIdx) => (
+                            <li key={iIdx}>{renderMarkdownInline(item.replace(/^-\s*/, ""))}</li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    // Regular paragraph
+                    return (
+                      <p key={pIdx} className="my-3">
+                        {renderMarkdownInline(paragraph)}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -263,14 +335,32 @@ export default async function TemplatePage({ params }: { params: Promise<{ templ
               <div className="mb-10">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Required Models</h2>
                 <ul className="space-y-2">
-                  {sections["Required Models"].split("\n").filter(Boolean).map((line, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]"></span>
-                      <code className="bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-mono text-gray-800">
-                        {line.replace(/^-\s*`?|`?\s*\([^)]+\)\s*$/g, "").trim()}
-                      </code>
-                    </li>
-                  ))}
+                  {sections["Required Models"].split("\n").filter(Boolean).map((line, i) => {
+                    // Parse markdown link: [filename](url) or `filename`
+                    const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
+                    const filename = linkMatch ? linkMatch[1] : line.replace(/^-\s*`?|`?\s*\([^)]+\)\s*$/g, "").trim();
+                    const url = linkMatch ? linkMatch[2] : null;
+
+                    return (
+                      <li key={i} className="flex items-center gap-3 text-gray-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]"></span>
+                        {url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-mono text-[var(--color-primary)] hover:bg-gray-200 transition-colors"
+                          >
+                            {filename}
+                          </a>
+                        ) : (
+                          <code className="bg-gray-100 px-3 py-1.5 rounded-lg text-sm font-mono text-gray-800">
+                            {filename}
+                          </code>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}
@@ -293,7 +383,7 @@ export default async function TemplatePage({ params }: { params: Promise<{ templ
               </p>
               <div className="code-block-glow mb-6">
                 <pre className="bg-gray-900 rounded-xl p-4 overflow-x-auto text-sm">
-                  <code className="text-green-400 font-mono">pip install c3cli && c3 comfyui run {templateId}</code>
+                  <code className="text-green-400 font-mono">pip install c3-cli && c3 comfyui run {templateId}</code>
                 </pre>
               </div>
               <Link
