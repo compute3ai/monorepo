@@ -70,8 +70,7 @@ def build_header(job, elapsed: int, metrics) -> Panel:
         mem_pct = (s.memory_used / s.memory_limit * 100) if s.memory_limit else 0
         mem_c = "red" if mem_pct >= 90 else "yellow" if mem_pct >= 70 else "green"
 
-        cores_str = f"{s.cpu_cores:.0f}" if s.cpu_cores == int(s.cpu_cores) else f"{s.cpu_cores:.1f}"
-        line = f"[bold]CPU[/] x{cores_str} {bar(cpu_pct, 20, cpu_c)} {cpu_pct:4.0f}%  "
+        line = f"[bold]CPU[/]  {bar(cpu_pct, 20, cpu_c)} {cpu_pct:4.0f}%  "
         line += f"RAM  {bar(mem_pct, 15, mem_c)} {s.memory_used/1024:.1f}/{s.memory_limit/1024:.1f}GB"
         parts.append(line)
 
@@ -218,41 +217,50 @@ async def _run_job_monitor_async(
         nonlocal metrics
         while not stop_event.is_set():
             try:
-                if job and job.state == "running":
+                if job and job.state in ("assigned", "running"):
                     metrics = await asyncio.to_thread(c3.jobs.metrics, job_id)
             except Exception:
                 pass
             await asyncio.sleep(2)
 
+    async def fetch_job_task():
+        """Background task that fetches job state periodically"""
+        nonlocal job, log_stream, log_task, ws_status
+        while not stop_event.is_set():
+            try:
+                job = await asyncio.to_thread(c3.jobs.get, job_id)
+
+                # Start log stream when job is ready
+                if job.state in ("assigned", "running") and log_stream is None and job.job_key:
+                    # Fetch initial logs ONCE
+                    if job.state == "running":
+                        initial = await asyncio.to_thread(fetch_logs, c3, job_id, MAX_LOG_LINES)
+                        for line in initial:
+                            logs.append(line)
+
+                    # Connect websocket and start streaming task
+                    log_stream = LogStream(
+                        c3, job_id,
+                        job_key=job.job_key,
+                        fetch_initial=False,
+                        max_buffer=MAX_LOG_LINES,
+                    )
+                    await log_stream.connect()
+                    log_task = asyncio.create_task(stream_logs_task(log_stream))
+                    ws_status = "[green]● live[/]"
+            except Exception:
+                pass
+            await asyncio.sleep(1)
+
     try:
-        # Start metrics task
+        # Start background tasks
         metrics_task = asyncio.create_task(fetch_metrics_task())
+        job_task = asyncio.create_task(fetch_job_task())
 
         with Live(console=console, refresh_per_second=10, screen=True) as live:
             while True:
                 try:
-                    # Refresh job state
-                    job = await asyncio.to_thread(c3.jobs.get, job_id)
-                    elapsed = int(time.time() - job.started_at) if job.started_at else 0
-
-                    # Start log stream when job is ready
-                    if job.state in ("assigned", "running") and log_stream is None and job.job_key:
-                        # Fetch initial logs ONCE
-                        if job.state == "running":
-                            initial = await asyncio.to_thread(fetch_logs, c3, job_id, MAX_LOG_LINES)
-                            for line in initial:
-                                logs.append(line)
-
-                        # Connect websocket and start streaming task
-                        log_stream = LogStream(
-                            c3, job_id,
-                            job_key=job.job_key,
-                            fetch_initial=False,
-                            max_buffer=MAX_LOG_LINES,
-                        )
-                        await log_stream.connect()
-                        log_task = asyncio.create_task(stream_logs_task(log_stream))
-                        ws_status = "[green]● live[/]"
+                    elapsed = int(time.time() - job.started_at) if job and job.started_at else 0
 
                     # Drain status queue if provided
                     if status_q:
@@ -268,8 +276,9 @@ async def _run_job_monitor_async(
                     content_height = max(10, term_height - header_height - 4)
 
                     # Update display
-                    layout = build_layout(job, elapsed, metrics, logs, ws_status, job_status, content_height)
-                    live.update(layout)
+                    if job:
+                        layout = build_layout(job, elapsed, metrics, logs, ws_status, job_status, content_height)
+                        live.update(layout)
 
                     # Check completion
                     if stop_on_status_complete and job_status and job_status.complete:
@@ -277,7 +286,7 @@ async def _run_job_monitor_async(
                         break
 
                     # Job terminated
-                    if job.state in ("succeeded", "failed", "canceled", "terminated"):
+                    if job and job.state in ("succeeded", "failed", "canceled", "terminated"):
                         # Fetch final logs ONCE
                         final = await asyncio.to_thread(fetch_logs, c3, job_id, MAX_LOG_LINES)
                         logs.clear()
@@ -295,7 +304,7 @@ async def _run_job_monitor_async(
                 except Exception as e:
                     console.print(f"[red]{e}[/]")
 
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.05)  # 20fps render loop
 
         console.print(f"\n[bold]Job {job.state}[/]")
 
@@ -308,6 +317,7 @@ async def _run_job_monitor_async(
         if log_stream:
             await log_stream.close()
         metrics_task.cancel()
+        job_task.cancel()
 
 
 def run_job_monitor(
