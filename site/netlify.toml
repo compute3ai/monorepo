@@ -24,7 +24,7 @@
   NEXT_PUBLIC_INSTANCES_API_URL = "https://api.compute3.ai/instances"
 
   # WebSocket URL for job logs
-  NEXT_PUBLIC_WS_URL = "wss://api.compute3.ai/orchestra"
+  NEXT_PUBLIC_WS_URL = "wss://api.compute3.ai/orchestra/ws"
 
   # LLM API URL for chat completions
   NEXT_PUBLIC_LLM_API_URL = "https://api.compute3.ai/v1"
