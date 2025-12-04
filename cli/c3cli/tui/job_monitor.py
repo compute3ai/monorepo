@@ -186,13 +186,28 @@ async def _run_job_monitor_async(
                 await asyncio.sleep(1)
 
     async def stream_logs_task(stream: LogStream):
-        """Background task that streams logs continuously"""
+        """Background task that streams logs continuously with batching"""
         nonlocal ws_status
+        log_batch = []
+        last_flush = asyncio.get_event_loop().time()
+        FLUSH_INTERVAL = 0.05  # Flush every 50ms
+
         try:
             async for line in stream:
                 if stop_event.is_set():
                     break
-                logs.append(line)
+                log_batch.append(line)
+
+                # Flush batch periodically
+                now = asyncio.get_event_loop().time()
+                if now - last_flush >= FLUSH_INTERVAL:
+                    logs.extend(log_batch)
+                    log_batch.clear()
+                    last_flush = now
+
+            # Flush remaining
+            if log_batch:
+                logs.extend(log_batch)
         except Exception:
             pass
         finally:
