@@ -1,0 +1,199 @@
+---
+title: instances
+description: Browse and launch GPU instances
+---
+
+Browse available GPU types, regions, and pricing. Launch GPU instances with Docker images.
+
+## List Available Instances
+
+```bash
+c3 instances list
+```
+
+Shows all available GPU configurations with pricing:
+
+```bash
+c3 instances list
+# ┌─────────┬───────┬──────────────────┬────────────┬────────────────┬───────┬────────┐
+# │ GPU     │ Count │ Region           │ Spot $/hr  │ On-Demand $/hr │ vCPUs │ RAM GB │
+# ├─────────┼───────┼──────────────────┼────────────┼────────────────┼───────┼────────┤
+# │ l40s    │ 1     │ us (US East)     │ $0.69      │ $1.29          │ 16    │ 128    │
+# │ h100    │ 1     │ fi (Finland)     │ $2.49      │ $4.29          │ 32    │ 256    │
+# └─────────┴───────┴──────────────────┴────────────┴────────────────┴───────┴────────┘
+```
+
+### Filter Options
+
+```bash
+# Filter by GPU type
+c3 instances list -g h100
+
+# Filter by region
+c3 instances list -r us
+
+# JSON output
+c3 instances list -o json
+```
+
+## List GPU Types
+
+```bash
+c3 instances gpus
+```
+
+Shows available GPU types with their configurations:
+
+```bash
+c3 instances gpus
+# ┌──────────────┬───────────────┬─────────────────────────┬────────┬─────────────┐
+# │ GPU Type     │ Name          │ Description             │ Counts │ Regions     │
+# ├──────────────┼───────────────┼─────────────────────────┼────────┼─────────────┤
+# │ l40s         │ L40S          │ NVIDIA L40S 48GB        │ 1, 2   │ us, fi, de  │
+# │ h100         │ H100 SXM      │ NVIDIA H100 80GB SXM    │ 1, 8   │ fi, us      │
+# │ a100         │ A100 SXM      │ NVIDIA A100 80GB SXM    │ 1, 8   │ us          │
+# │ RTXPRO6000   │ RTX PRO 6000  │ NVIDIA RTX PRO 6000     │ 1      │ fi          │
+# └──────────────┴───────────────┴─────────────────────────┴────────┴─────────────┘
+```
+
+### Options
+
+```bash
+# Filter by region
+c3 instances gpus -r fi
+
+# JSON output
+c3 instances gpus -o json
+```
+
+## List Regions
+
+```bash
+c3 instances regions
+```
+
+Shows available regions:
+
+```bash
+c3 instances regions
+# ┌──────┬────────────────────┬─────────────┐
+# │ Code │ Location           │ Country     │
+# ├──────┼────────────────────┼─────────────┤
+# │ us   │ US East            │ USA         │
+# │ fi   │ Finland            │ Finland     │
+# │ de   │ Germany            │ Germany     │
+# └──────┴────────────────────┴─────────────┘
+```
+
+## Launch Instance
+
+Launch a GPU instance with a Docker image:
+
+```bash
+c3 instances launch <image> [options]
+```
+
+### Basic Examples
+
+```bash
+# Launch CUDA container
+c3 instances launch nvidia/cuda:12.0-base-ubuntu22.04
+
+# With command
+c3 instances launch nvidia/cuda:12.0 -c "python train.py"
+
+# Specify GPU type
+c3 instances launch my-image:latest -g h100 -c "./run.sh"
+```
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--command` | `-c` | Command to run in container |
+| `--gpu` | `-g` | GPU type (default: l40s) |
+| `--count` | `-n` | Number of GPUs (default: 1) |
+| `--region` | `-r` | Region code |
+| `--runtime` | `-t` | Max runtime in seconds |
+| `--interruptible/--on-demand` | | Use interruptible or on-demand instances |
+| `--env` | `-e` | Environment variables (KEY=VALUE) |
+| `--port` | `-p` | Port mappings (name:port) |
+| `--follow` | `-f` | Follow logs after launch |
+| `--output` | `-o` | Output format: table\|json |
+
+### Environment Variables
+
+```bash
+c3 instances launch my-image:latest \
+  -e "API_KEY=secret" \
+  -e "DEBUG=true" \
+  -c "python app.py"
+```
+
+### Port Mappings
+
+```bash
+# Expose HTTP port
+c3 instances launch my-image:latest -p http:8080
+
+# Expose load balancer (HTTPS)
+c3 instances launch my-image:latest -p lb:8080
+```
+
+### On-Demand vs Interruptible
+
+```bash
+# Use interruptible instances (default, cheaper)
+c3 instances launch my-image:latest --interruptible
+
+# Use on-demand instances (more reliable)
+c3 instances launch my-image:latest --on-demand
+```
+
+### Follow Logs
+
+```bash
+# Launch and follow logs in TUI
+c3 instances launch my-image:latest -g l40s -c "python train.py" -f
+```
+
+### JSON Output
+
+```bash
+# Get job details as JSON
+c3 instances launch my-image:latest -o json
+```
+
+## Examples
+
+### Training Job
+
+```bash
+c3 instances launch my-training:latest \
+  -g h100 \
+  -n 8 \
+  -r fi \
+  -t 86400 \
+  --on-demand \
+  -e "WANDB_API_KEY=$WANDB_API_KEY" \
+  -c "torchrun --nproc_per_node=8 train.py" \
+  -f
+```
+
+### Web Service
+
+```bash
+c3 instances launch my-api:latest \
+  -g l40s \
+  -p lb:8080 \
+  -c "uvicorn main:app --host 0.0.0.0 --port 8080"
+```
+
+### Inference Server
+
+```bash
+c3 instances launch vllm/vllm-openai:latest \
+  -g h100 \
+  -p lb:8000 \
+  -c "python -m vllm.entrypoints.openai.api_server --model meta-llama/Llama-3.1-8B"
+```

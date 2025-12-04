@@ -10,6 +10,10 @@ DEFAULT_API_URL = "https://api.compute3.ai"
 DEFAULT_WS_URL = "wss://api.compute3.ai"
 WS_LOGS_PATH = "/orchestra/ws/logs"  # WebSocket path for job logs: {WS_URL}{WS_LOGS_PATH}/{job_key}
 
+# GHCR images
+GHCR_IMAGES = "ghcr.io/compute3ai/images"
+COMFYUI_IMAGE = f"{GHCR_IMAGES}/comfyui"
+
 
 def _load_config_file() -> dict:
     """Load config from ~/.c3/config"""

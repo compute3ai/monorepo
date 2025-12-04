@@ -68,6 +68,8 @@
               "sdk/index",
               "sdk/billing",
               "sdk/jobs",
+              "sdk/logs",
+              "sdk/comfyui",
               "sdk/reference"
             ]
           }
@@ -88,6 +90,8 @@
             "group": "Commands",
             "pages": [
               "cli/commands/billing",
+              "cli/commands/comfyui",
+              "cli/commands/instances",
               "cli/commands/jobs",
               "cli/commands/llm",
               "cli/commands/user"
@@ -162,7 +166,7 @@
       "anchors": [
         {
           "anchor": "Dashboard",
-          "href": "https://compute3.ai/dashboard",
+          "href": "https://console.compute3.ai",
           "icon": "gauge"
         },
         {
@@ -187,7 +191,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://compute3.ai/dashboard"
+      "href": "https://console.compute3.ai"
     }
   },
   "footer": {

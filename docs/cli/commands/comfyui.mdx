@@ -1,0 +1,177 @@
+---
+title: comfyui
+description: Run ComfyUI workflows on GPU
+---
+
+Run ComfyUI image and video generation workflows on GPU instances.
+
+## Install Templates
+
+ComfyUI commands require workflow templates:
+
+```bash
+pip install comfyui-workflow-templates comfyui-workflow-templates-media-image
+```
+
+## List Templates
+
+```bash
+c3 comfyui templates
+```
+
+Shows available workflow templates organized by bundle.
+
+## Run Workflow
+
+```bash
+c3 comfyui run <template> --prompt "your prompt"
+```
+
+### Basic Examples
+
+```bash
+# Generate an image with Flux Schnell
+c3 comfyui run flux_schnell --prompt "a sunset over mountains" --output sunset
+
+# Generate video with Wan 2.2
+c3 comfyui run video_wan2_2_14B_t2v --prompt "a cat walking" --output cat_video
+
+# Specify GPU and region
+c3 comfyui run flux_dev --prompt "cyberpunk city" -g h100 -r us
+```
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--prompt` | `-p` | Positive prompt (required) |
+| `--negative` | `-n` | Negative prompt |
+| `--output` | `-o` | Output filename prefix (default: output) |
+| `--output-dir` | `-d` | Output directory (default: .) |
+| `--seed` | `-s` | Random seed (deterministic results) |
+| `--random` | | Use random seed |
+| `--width` | `-W` | Image width |
+| `--height` | `-H` | Image height |
+| `--steps` | | Number of sampling steps |
+| `--cfg` | | CFG scale |
+| `--gpu` | `-g` | GPU type (default: l40s) |
+| `--gpu-count` | `-c` | Number of GPUs (default: 1) |
+| `--region` | `-r` | Region code |
+| `--timeout` | `-T` | Workflow timeout in seconds (default: 600) |
+| `--interruptible/--on-demand` | | Use interruptible or on-demand instances |
+| `--num` | `-N` | Number of images to generate |
+| `--new` | | Always launch new instance |
+| `--instance` | `-i` | Connect to existing job by ID, hostname, or IP |
+| `--lb` | | Enable HTTPS load balancer on port |
+| `--auth` | | Enable Bearer token auth on load balancer |
+| `--stdout` | | Output to stdout instead of TUI |
+| `--debug` | | Debug mode with verbose output |
+
+### GPU Selection
+
+```bash
+# Use L40s (default, good balance)
+c3 comfyui run flux_schnell --prompt "..." -g l40s
+
+# Use H100 for faster generation
+c3 comfyui run flux_dev --prompt "..." -g h100
+
+# Use RTX PRO 6000 for video generation
+c3 comfyui run video_wan2_2_14B_t2v --prompt "..." -g RTXPRO6000
+```
+
+### Batch Generation
+
+Generate multiple images with different seeds:
+
+```bash
+# Generate 4 variations
+c3 comfyui run flux_schnell --prompt "a forest" --num 4 --output forest
+
+# With specific starting seed
+c3 comfyui run flux_schnell --prompt "a forest" --num 4 --seed 12345
+```
+
+### Instance Reuse
+
+By default, the CLI reuses existing ComfyUI instances with matching templates:
+
+```bash
+# First run - launches new instance
+c3 comfyui run flux_schnell --prompt "sunset"
+
+# Second run - reuses same instance (faster startup)
+c3 comfyui run flux_schnell --prompt "mountains"
+
+# Force new instance
+c3 comfyui run flux_schnell --prompt "ocean" --new
+```
+
+### Connect to Existing Instance
+
+```bash
+# By job ID
+c3 comfyui run flux_schnell --prompt "..." --instance abc123-def456
+
+# By hostname
+c3 comfyui run flux_schnell --prompt "..." --instance my-hostname
+
+# By IP address
+c3 comfyui run flux_schnell --prompt "..." --instance 192.168.1.1
+```
+
+### HTTPS Load Balancer
+
+For secure external access:
+
+```bash
+# Enable HTTPS load balancer on port 8188
+c3 comfyui run flux_schnell --prompt "..." --lb 8188
+
+# With authentication
+c3 comfyui run flux_schnell --prompt "..." --lb 8188 --auth
+```
+
+### Debug Mode
+
+For troubleshooting:
+
+```bash
+c3 comfyui run flux_schnell --prompt "..." --debug
+```
+
+Shows:
+- API requests and responses
+- Workflow node details
+- Detailed error messages
+
+### Output Modes
+
+```bash
+# TUI mode (default) - shows logs and status
+c3 comfyui run flux_schnell --prompt "..."
+
+# Simple stdout mode
+c3 comfyui run flux_schnell --prompt "..." --stdout
+```
+
+## Templates Reference
+
+### Image Templates
+
+| Template | Model | Notes |
+|----------|-------|-------|
+| `flux_schnell` | Flux Schnell | Fast, 4 steps |
+| `flux_dev_full_text_to_image` | Flux Dev | High quality |
+| `sdxl_simple_example` | SDXL | Stable Diffusion XL |
+| `image_qwen_image` | Qwen | Qwen image model |
+| `image_chroma_text_to_image` | Chroma | Chroma model |
+
+### Video Templates
+
+| Template | Model | Notes |
+|----------|-------|-------|
+| `video_wan2_2_14B_t2v` | Wan 2.2 14B | Text-to-video |
+| `video_wan2.1_alpha_t2v_14B` | Wan 2.1 | Text-to-video |
+| `video_hunyuan_video_1.5_720p_t2v` | Hunyuan 1.5 | 720p video |
+| `hunyuan_video_text_to_video` | Hunyuan | Text-to-video |

@@ -39,7 +39,7 @@ c3 jobs create myimage -e HF_TOKEN=xxx -p http:8080
 - `-c, --command` - Command to run
 - `-r, --region` - Region code
 - `-t, --runtime` - Max runtime in seconds
-- `--spot/--on-demand` - Use spot instances (default: spot)
+- `--interruptible/--on-demand` - Use interruptible instances (default: interruptible)
 - `-e, --env` - Environment variables (KEY=VALUE), can repeat
 - `-p, --port` - Port mappings (name:port), can repeat
 - `-f, --follow` - Launch TUI monitor after creation

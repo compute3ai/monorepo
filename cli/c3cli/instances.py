@@ -136,7 +136,7 @@ def launch(
     count: int = typer.Option(1, "--count", "-n", help="Number of GPUs"),
     region: Optional[str] = typer.Option(None, "--region", "-r", help="Region code"),
     runtime: Optional[int] = typer.Option(None, "--runtime", "-t", help="Runtime in seconds"),
-    spot: bool = typer.Option(True, "--spot/--on-demand", help="Use spot instances"),
+    interruptible: bool = typer.Option(True, "--interruptible/--on-demand", help="Use interruptible instances"),
     env: Optional[list[str]] = typer.Option(None, "--env", "-e", help="Env vars (KEY=VALUE)"),
     port: Optional[list[str]] = typer.Option(None, "--port", "-p", help="Ports (name:port)"),
     follow: bool = typer.Option(False, "--follow", "-f", help="Follow logs after creation"),
@@ -171,7 +171,7 @@ def launch(
             gpu_count=count,
             region=region,
             runtime=runtime,
-            interruptible=spot,
+            interruptible=interruptible,
             env=env_dict,
             ports=ports_dict,
         )

@@ -1,0 +1,245 @@
+---
+title: ComfyUI
+description: SDK helpers for running ComfyUI workflows
+---
+
+The SDK provides helpers for running ComfyUI workflows on GPU instances.
+
+## Installation
+
+ComfyUI support requires optional dependencies:
+
+```bash
+pip install "c3-sdk[comfyui]"
+```
+
+This installs the workflow templates packages.
+
+## Quick Start
+
+```python
+from c3 import C3, ComfyUIJob
+
+c3 = C3()
+
+# Create a ComfyUI job
+job = ComfyUIJob.create(
+    c3,
+    gpu_type="l40s",
+    template="flux_schnell",  # Pre-built workflow template
+    lb=8188,                   # HTTPS load balancer on port 8188
+)
+
+# Wait for ComfyUI to be ready
+job.wait_ready()
+
+# Run a workflow
+history = job.run_template(
+    "flux_schnell",
+    prompt="a beautiful sunset over mountains",
+    width=1024,
+    height=1024,
+    steps=4,
+)
+
+# Download outputs
+images = job.get_output_images(history)
+for img in images:
+    job.download_image(img, "output/")
+```
+
+## ComfyUIJob
+
+`ComfyUIJob` wraps a job with ComfyUI-specific methods.
+
+### Create
+
+```python
+job = ComfyUIJob.create(
+    c3,
+    gpu_type="l40s",        # GPU type
+    gpu_count=1,            # Number of GPUs
+    template="flux_dev",    # Pre-loads models for this template
+    runtime=3600,           # Max runtime (optional)
+    lb=8188,                # HTTPS load balancer port
+    auth=False,             # Enable token auth
+    region=None,            # Region (optional)
+)
+```
+
+### From Existing Job
+
+```python
+# Wrap an existing job
+job = c3.jobs.get("job-id")
+comfy = ComfyUIJob(c3, job)
+
+# Or find by hostname
+comfy = ComfyUIJob.from_hostname(c3, "my-hostname")
+```
+
+### Wait for Ready
+
+```python
+# Wait for ComfyUI HTTP endpoint to be available
+if job.wait_ready(timeout=300):
+    print("ComfyUI is ready!")
+else:
+    print("Timeout waiting for ComfyUI")
+```
+
+### Load Templates
+
+```python
+# Load a workflow template (graph format)
+graph = job.load_template("flux_schnell")
+
+# Convert to API format
+workflow = job.convert_workflow(graph)
+```
+
+### Apply Parameters
+
+Use `apply_params` to inject values into the workflow:
+
+```python
+from c3 import apply_params
+
+apply_params(
+    workflow,
+    prompt="your prompt here",
+    negative="things to avoid",
+    seed=12345,
+    steps=20,
+    cfg=7.5,
+    width=1024,
+    height=1024,
+    filename_prefix="output",
+)
+```
+
+Supported parameters:
+
+| Parameter | Description | Nodes affected |
+|-----------|-------------|----------------|
+| `prompt` | Positive prompt | CLIPTextEncode, etc. |
+| `negative` | Negative prompt | CLIPTextEncode (negative) |
+| `seed` | Random seed | KSampler, RandomNoise |
+| `steps` | Sampling steps | KSampler, schedulers |
+| `cfg` | CFG scale | KSampler |
+| `width` | Output width | EmptyLatentImage, etc. |
+| `height` | Output height | EmptyLatentImage, etc. |
+| `filename_prefix` | Output filename | SaveImage, SaveVideo |
+
+### Run Workflows
+
+```python
+# Queue a workflow
+prompt_id = job.queue_prompt(workflow)
+
+# Wait for completion
+history = job.wait_for_completion(prompt_id, timeout=300)
+
+# Or use the combined run method
+history = job.run(workflow, timeout=300)
+```
+
+### Get Outputs
+
+```python
+# Get output images from history
+images = job.get_output_images(history)
+# Returns list of {"filename": "...", "subfolder": "...", "type": "output"}
+
+# Download images
+for img in images:
+    local_path = job.download_image(img, "output/")
+    print(f"Downloaded: {local_path}")
+```
+
+## Available Templates
+
+Templates are provided by the `comfyui-workflow-templates` packages:
+
+### Image Generation
+- `flux_schnell` - Fast Flux model
+- `flux_dev_full_text_to_image` - Full Flux Dev
+- `sdxl_simple_example` - SDXL base
+- `image_qwen_image` - Qwen image model
+- `image_chroma_text_to_image` - Chroma model
+
+### Video Generation
+- `video_wan2_2_14B_t2v` - Wan 2.2 text-to-video
+- `video_wan2.1_alpha_t2v_14B` - Wan 2.1 alpha
+- `video_hunyuan_video_1.5_720p_t2v` - Hunyuan video
+- `hunyuan_video_text_to_video` - Hunyuan base
+
+## Workflow Utilities
+
+### Find Nodes
+
+```python
+from c3 import find_node, find_nodes
+
+# Find first node of a type
+node_id, node = find_node(workflow, "KSampler")
+
+# Find by type and title
+node_id, node = find_node(workflow, "CLIPTextEncode", "Positive")
+
+# Find all nodes of a type
+nodes = find_nodes(workflow, "CLIPTextEncode")
+```
+
+## Example: Complete Workflow
+
+```python
+import asyncio
+from c3 import C3, ComfyUIJob, apply_params
+
+async def generate_image():
+    c3 = C3()
+
+    # Create job
+    job = ComfyUIJob.create(
+        c3,
+        gpu_type="l40s",
+        template="flux_schnell",
+        lb=8188,
+    )
+
+    print(f"Job: {job.job.job_id}")
+    print(f"URL: https://{job.job.hostname}")
+
+    try:
+        # Wait for ready
+        if not job.wait_ready(timeout=300):
+            raise RuntimeError("ComfyUI failed to start")
+
+        # Load and configure workflow
+        graph = job.load_template("flux_schnell")
+        workflow = job.convert_workflow(graph)
+
+        apply_params(
+            workflow,
+            prompt="a cyberpunk city at night, neon lights",
+            steps=4,
+            width=1024,
+            height=1024,
+        )
+
+        # Run
+        history = job.run(workflow, timeout=120)
+
+        # Download outputs
+        images = job.get_output_images(history)
+        for img in images:
+            path = job.download_image(img, "output/")
+            print(f"Saved: {path}")
+
+    finally:
+        # Cancel job when done
+        c3.jobs.cancel(job.job.job_id)
+
+asyncio.run(generate_image())
+```

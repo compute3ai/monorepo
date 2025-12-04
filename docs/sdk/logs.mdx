@@ -1,0 +1,186 @@
+---
+title: Log Streaming
+description: Real-time log streaming for jobs
+---
+
+The SDK provides multiple ways to access job logs, from simple one-time fetches to real-time async streaming.
+
+## One-Time Fetch
+
+For simple log retrieval:
+
+```python
+from c3 import C3, fetch_logs
+
+c3 = C3()
+
+# Via jobs API
+logs = c3.jobs.logs("job_id")
+print(logs)
+
+# Or using fetch_logs helper
+lines = fetch_logs(c3, "job_id")
+for line in lines:
+    print(line)
+
+# Get only last N lines
+lines = fetch_logs(c3, "job_id", tail=100)
+```
+
+## Async Log Streaming
+
+For real-time log streaming via WebSocket:
+
+```python
+import asyncio
+from c3 import C3, LogStream
+
+async def stream_job_logs(job_id: str):
+    c3 = C3()
+
+    async with LogStream(c3, job_id) as stream:
+        # Initial logs returned on connect
+        initial = await stream.connect()
+        for line in initial:
+            print(line)
+
+        # Stream new logs as they arrive
+        async for line in stream:
+            print(line)
+
+asyncio.run(stream_job_logs("your-job-id"))
+```
+
+### LogStream Options
+
+```python
+stream = LogStream(
+    c3,
+    job_id,
+    fetch_initial=True,        # Fetch existing logs on connect
+    max_initial_lines=1000,    # Limit initial fetch
+    max_buffer=5000,           # Max lines to keep in buffer
+)
+```
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `c3` | C3 | required | C3 client instance |
+| `job_id` | str | required | Job ID |
+| `job_key` | str | None | Job key (auto-fetched if not provided) |
+| `fetch_initial` | bool | True | Fetch existing logs on connect |
+| `max_initial_lines` | int | 1000 | Max lines to fetch initially |
+| `max_buffer` | int | 5000 | Max lines to keep in memory buffer |
+
+### LogStream Methods
+
+```python
+# Connect and get initial logs
+initial_logs = await stream.connect()
+
+# Check connection status
+print(stream.status)  # 'disconnected', 'connecting', 'connected', 'closed'
+
+# Get buffered logs
+all_logs = stream.get_buffer()
+
+# Clear buffer
+stream.clear_buffer()
+
+# Close connection
+await stream.close()
+```
+
+## Stream Until Job Completes
+
+For streaming logs until a job reaches a terminal state:
+
+```python
+import asyncio
+from c3 import C3, stream_logs
+
+async def follow_job(job_id: str):
+    c3 = C3()
+
+    def on_line(line: str):
+        print(line)
+
+    await stream_logs(
+        c3,
+        job_id,
+        on_line=on_line,
+        until_state={"succeeded", "failed", "canceled", "terminated"},
+        fetch_initial=True,
+        fetch_final=True,
+    )
+
+asyncio.run(follow_job("your-job-id"))
+```
+
+### stream_logs Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `c3` | C3 | required | C3 client instance |
+| `job_id` | str | required | Job ID |
+| `on_line` | Callable | required | Callback for each log line |
+| `until_state` | set | terminal states | States to stop streaming |
+| `poll_state_interval` | float | 2.0 | How often to check job state |
+| `fetch_initial` | bool | True | Fetch existing logs on start |
+| `fetch_final` | bool | True | Fetch logs after job terminates |
+| `max_initial_lines` | int | 1000 | Max lines to fetch initially |
+
+## Embedding Logs in Applications
+
+Example: Display logs in a web application using the LogStream:
+
+```python
+import asyncio
+from c3 import C3, LogStream
+
+class LogViewer:
+    def __init__(self, job_id: str):
+        self.c3 = C3()
+        self.job_id = job_id
+        self.stream = None
+        self.logs = []
+
+    async def start(self):
+        self.stream = LogStream(self.c3, self.job_id)
+        initial = await self.stream.connect()
+        self.logs.extend(initial)
+
+        # Start background task to receive new logs
+        asyncio.create_task(self._receive_logs())
+
+    async def _receive_logs(self):
+        async for line in self.stream:
+            self.logs.append(line)
+            # Notify UI of new log line
+            await self.on_new_log(line)
+
+    async def on_new_log(self, line: str):
+        # Override this in your application
+        pass
+
+    async def stop(self):
+        if self.stream:
+            await self.stream.close()
+
+    def get_logs(self) -> list[str]:
+        return self.logs
+```
+
+## WebSocket Protocol
+
+The log streaming uses WebSocket connections to `wss://api.compute3.ai/ws/logs/{job_key}`.
+
+Messages are JSON with format:
+```json
+{
+  "event": "log",
+  "log": "log line content\n"
+}
+```
+
+The `job_key` is available from `job.job_key` after the job is created.

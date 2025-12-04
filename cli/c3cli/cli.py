@@ -7,7 +7,7 @@ from rich.prompt import Prompt
 from c3 import C3, APIError, configure
 from c3.config import CONFIG_FILE
 
-from . import billing, instances, jobs, llm, user
+from . import billing, comfyui, instances, jobs, llm, user
 
 console = Console()
 
@@ -57,6 +57,7 @@ app = typer.Typer(
 
 # Register subcommands
 app.add_typer(billing.app, name="billing")
+app.add_typer(comfyui.app, name="comfyui")
 app.add_typer(instances.app, name="instances")
 app.add_typer(jobs.app, name="jobs")
 app.add_typer(llm.app, name="llm")
@@ -148,7 +149,7 @@ def cli():
             sys.exit(1)
 
         # Generic API error
-        console.print(f"[bold red]API Error:[/bold red] {detail}")
+        console.print(f"[bold red]API Error ({e.status_code}):[/bold red] {detail}")
         sys.exit(1)
 
     except KeyboardInterrupt:
