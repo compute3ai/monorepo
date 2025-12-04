@@ -49,6 +49,7 @@ class Job:
 @dataclass
 class GPUMetrics:
     index: int
+    name: str
     utilization: float
     memory_used: float
     memory_total: float
@@ -59,22 +60,41 @@ class GPUMetrics:
     def from_dict(cls, data: dict) -> "GPUMetrics":
         return cls(
             index=data.get("index", 0),
-            utilization=data.get("utilization", 0),
-            memory_used=data.get("memory_used", 0),
-            memory_total=data.get("memory_total", 0),
-            temperature=data.get("temperature", 0),
-            power_draw=data.get("power_draw", 0),
+            name=data.get("name", ""),
+            utilization=data.get("utilization_gpu_percent", 0),
+            memory_used=data.get("memory_used_mb", 0),
+            memory_total=data.get("memory_total_mb", 0),
+            temperature=data.get("temperature_c", 0),
+            power_draw=data.get("power_draw_w", 0),
+        )
+
+
+@dataclass
+class SystemMetrics:
+    cpu_percent: float
+    memory_used: float
+    memory_limit: float
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SystemMetrics":
+        return cls(
+            cpu_percent=data.get("cpu_percent", 0),
+            memory_used=data.get("memory_used_mb", 0),
+            memory_limit=data.get("memory_limit_mb", 0),
         )
 
 
 @dataclass
 class JobMetrics:
     gpus: list[GPUMetrics] = field(default_factory=list)
+    system: SystemMetrics | None = None
 
     @classmethod
     def from_dict(cls, data: dict) -> "JobMetrics":
+        system_data = data.get("system")
         return cls(
-            gpus=[GPUMetrics.from_dict(g) for g in data.get("gpus", [])]
+            gpus=[GPUMetrics.from_dict(g) for g in data.get("gpus", [])],
+            system=SystemMetrics.from_dict(system_data) if system_data else None,
         )
 
 

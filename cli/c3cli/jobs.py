@@ -110,6 +110,22 @@ def _print_metrics(m):
     from rich.panel import Panel
     from rich.table import Table
 
+    # System metrics (CPU/RAM)
+    if m.system:
+        sys_table = Table(show_header=False, box=None, padding=(0, 2))
+        sys_table.add_column("Metric", style="cyan")
+        sys_table.add_column("Value")
+        sys_table.add_column("Bar", width=30)
+
+        cpu_bar = _make_bar(m.system.cpu_percent, 100)
+        mem_pct = (m.system.memory_used / m.system.memory_limit * 100) if m.system.memory_limit else 0
+        mem_bar = _make_bar(mem_pct, 100)
+
+        sys_table.add_row("CPU", f"{m.system.cpu_percent:5.1f}%", cpu_bar)
+        sys_table.add_row("RAM", f"{m.system.memory_used/1024:.1f}/{m.system.memory_limit/1024:.1f} GB", mem_bar)
+
+        console.print(Panel(sys_table, title="[bold]System[/bold]"))
+
     if not m.gpus:
         console.print("[dim]No GPU metrics available[/dim]")
         return
@@ -130,7 +146,8 @@ def _print_metrics(m):
         table.add_row("Temp", f"{gpu.temperature}°C", temp_bar)
         table.add_row("Power", f"{gpu.power_draw:.0f}W", "")
 
-        console.print(Panel(table, title=f"[bold]GPU {gpu.index}[/bold]"))
+        title = f"[bold]GPU {gpu.index}: {gpu.name}[/bold]" if gpu.name else f"[bold]GPU {gpu.index}[/bold]"
+        console.print(Panel(table, title=title))
 
 
 def _make_bar(value: float, max_val: float, warn: float = None, crit: float = None) -> str:
@@ -180,9 +197,25 @@ def _render_metrics(m):
     """Render metrics as Rich panel"""
     from rich.panel import Panel
     from rich.table import Table
+    from rich.console import Group
+
+    panels = []
+
+    # System metrics
+    if m.system:
+        sys_table = Table(show_header=False, box=None)
+        sys_table.add_column("Metric", style="cyan")
+        sys_table.add_column("Value")
+        cpu_bar = _make_bar(m.system.cpu_percent, 100)
+        mem_pct = (m.system.memory_used / m.system.memory_limit * 100) if m.system.memory_limit else 0
+        mem_bar = _make_bar(mem_pct, 100)
+        sys_table.add_row("CPU", f"{m.system.cpu_percent:5.1f}% {cpu_bar}")
+        sys_table.add_row("RAM", f"{m.system.memory_used/1024:.1f}/{m.system.memory_limit/1024:.1f}GB {mem_bar}")
+        panels.append(Panel(sys_table, title="[bold]System[/bold]", border_style="blue"))
 
     if not m.gpus:
-        return Panel("[dim]No GPU metrics[/dim]")
+        panels.append(Panel("[dim]No GPU metrics[/dim]"))
+        return Group(*panels)
 
     table = Table(show_header=True, header_style="bold cyan", box=None)
     table.add_column("GPU")
@@ -193,12 +226,14 @@ def _render_metrics(m):
 
     for gpu in m.gpus:
         util_bar = _make_bar(gpu.utilization, 100)
+        name = f"{gpu.index}: {gpu.name}" if gpu.name else str(gpu.index)
         table.add_row(
-            f"[bold]{gpu.index}[/bold]",
+            f"[bold]{name}[/bold]",
             f"{gpu.utilization:5.1f}% {util_bar}",
             f"{gpu.memory_used/1024:.1f}/{gpu.memory_total/1024:.1f}GB",
             f"{gpu.temperature}°C",
             f"{gpu.power_draw:.0f}W"
         )
 
-    return Panel(table, title="[bold]GPU Metrics[/bold]", border_style="green")
+    panels.append(Panel(table, title="[bold]GPU Metrics[/bold]", border_style="green"))
+    return Group(*panels)

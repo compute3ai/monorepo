@@ -205,3 +205,12 @@ html, body {
   animation: blink 1s infinite;
   margin-left: 2px;
 }
+
+/* Twemoji - cross-platform emoji rendering */
+img.emoji {
+  height: 1em;
+  width: 1em;
+  margin: 0 0.05em 0 0.1em;
+  vertical-align: -0.1em;
+  display: inline;
+}
