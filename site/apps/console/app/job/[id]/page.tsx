@@ -306,14 +306,14 @@ export default function JobDetailPage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.job_jwt && data.hostname) {
+        if (data.token && data.hostname) {
           // JWT tokens typically expire in 48 hours (2 days)
           const daysUntilExpiry = 2;
 
           // Extract subdomain from hostname (e.g., "fluffy-cat" from "fluffy-cat.compute3.ai")
           const subdomain = data.hostname.split('.')[0];
           const cookieName = `${subdomain}-token`;
-          cookieUtils.set(cookieName, data.job_jwt, daysUntilExpiry);
+          cookieUtils.set(cookieName, data.token, daysUntilExpiry);
 
           console.log(`✅ Job token set as ${cookieName} (expires in ${daysUntilExpiry} days)`);
         }
