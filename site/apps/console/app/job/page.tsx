@@ -99,7 +99,12 @@ function loadFromStorage<T>(key: keyof typeof DEFAULTS, fallback: T): T {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (key in parsed) return parsed[key];
+      if (key in parsed) {
+        const value = parsed[key];
+        // Treat empty string as "no stored value" for command field
+        if (key === 'command' && value === '') return fallback;
+        return value;
+      }
     }
   } catch {}
   return fallback;
