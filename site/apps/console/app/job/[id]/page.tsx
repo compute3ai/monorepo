@@ -141,8 +141,8 @@ export default function JobDetailPage() {
       stopPolling();
     }
 
-    // Fetch job token when hostname is available (assigned or running state)
-    if (job.hostname && !hasFetchedTokenRef.current) {
+    // Fetch job token only when job is running (container is ready)
+    if (state === 'running' && job.hostname && !hasFetchedTokenRef.current) {
       hasFetchedTokenRef.current = true;
       fetchJobToken(job.hostname);
     }
@@ -288,29 +288,19 @@ export default function JobDetailPage() {
   };
 
   const fetchJobToken = async (hostname: string) => {
-    console.log('🔐 fetchJobToken called with hostname:', hostname);
     try {
       const authToken = getAuthToken();
-      console.log('🔐 authToken from cookies:', authToken ? 'EXISTS' : 'NULL');
-      if (!authToken) {
-        console.error('No auth token found for job token fetch');
-        return;
-      }
+      if (!authToken) return;
 
-      const tokenUrl = `${process.env.NEXT_PUBLIC_AUTH_BACKEND}/jobs/${jobId}/token`;
-      console.log('🔑 Fetching job token from:', tokenUrl);
-
-      const response = await fetch(tokenUrl, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_BACKEND}/jobs/${jobId}/token`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('🔐 API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('🔐 API response data:', { hasToken: !!data.token, hasHostname: !!data.hostname, hostname: data.hostname });
         if (data.token && data.hostname) {
           // JWT tokens typically expire in 48 hours (2 days)
           const daysUntilExpiry = 2;
@@ -319,20 +309,8 @@ export default function JobDetailPage() {
           // Auth service expects cookie named "{subdomain}-token"
           const subdomain = data.hostname.split('.')[0];
           const cookieName = `${subdomain}-token`;
-          console.log('🔐 About to set cookie:', cookieName);
           cookieUtils.set(cookieName, data.token, daysUntilExpiry);
-          console.log('🔐 Cookie set called. Checking document.cookie...');
-          console.log('🔐 All cookies:', document.cookie);
-
-          console.log(`✅ Job token set as ${cookieName} (expires in ${daysUntilExpiry} days)`);
-        } else {
-          console.error('❌ API returned 200 but missing token or hostname:', { token: !!data.token, hostname: data.hostname });
         }
-      } else if (response.status === 400) {
-        // Job not assigned yet or auth not enabled - this is expected
-        console.log('⏳ Job token not available yet (job not assigned or auth disabled)');
-      } else {
-        console.error('Failed to fetch job token:', response.status);
       }
     } catch (err) {
       console.error('Error fetching job token:', err);
