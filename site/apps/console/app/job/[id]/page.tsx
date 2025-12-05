@@ -288,8 +288,10 @@ export default function JobDetailPage() {
   };
 
   const fetchJobToken = async (hostname: string) => {
+    console.log('🔐 fetchJobToken called with hostname:', hostname);
     try {
       const authToken = getAuthToken();
+      console.log('🔐 authToken from cookies:', authToken ? 'EXISTS' : 'NULL');
       if (!authToken) {
         console.error('No auth token found for job token fetch');
         return;
@@ -304,8 +306,10 @@ export default function JobDetailPage() {
         }
       });
 
+      console.log('🔐 API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('🔐 API response data:', { hasToken: !!data.token, hasHostname: !!data.hostname, hostname: data.hostname });
         if (data.token && data.hostname) {
           // JWT tokens typically expire in 48 hours (2 days)
           const daysUntilExpiry = 2;
@@ -314,7 +318,10 @@ export default function JobDetailPage() {
           // Auth service expects cookie named "{subdomain}-token"
           const subdomain = data.hostname.split('.')[0];
           const cookieName = `${subdomain}-token`;
+          console.log('🔐 About to set cookie:', cookieName);
           cookieUtils.set(cookieName, data.token, daysUntilExpiry);
+          console.log('🔐 Cookie set called. Checking document.cookie...');
+          console.log('🔐 All cookies:', document.cookie);
 
           console.log(`✅ Job token set as ${cookieName} (expires in ${daysUntilExpiry} days)`);
         }
