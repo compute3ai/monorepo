@@ -71,6 +71,49 @@ function resolveHfSpaceToImage(space: string): string {
   return `registry.hf.space/${normalized}:latest`;
 }
 
+// Default values when no localStorage exists
+const DEFAULTS = {
+  gpuMode: 'single' as const,
+  gpuType: '',
+  gpuCount: 1,
+  interruptible: true,
+  selectedRegion: 'fi',
+  containerSource: 'image' as const,
+  dockerImage: 'nvidia/cuda:12.6.0-runtime-ubuntu22.04',
+  hfSpace: '',
+  dockerfile: '',
+  command: '/bin/sh -c "sleep 5 && nvidia-smi && sleep 600"',
+  envVars: [] as {key: string, value: string}[],
+  ports: [] as {container: string, host: string}[],
+  httpsLbEnabled: false,
+  httpsLbPort: '',
+  httpsLbAuth: false,
+  runtime: 600,
+};
+
+const STORAGE_KEY = 'launchJobConfig';
+
+function loadFromStorage<T>(key: keyof typeof DEFAULTS, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (key in parsed) return parsed[key];
+    }
+  } catch {}
+  return fallback;
+}
+
+function saveToStorage(values: Partial<typeof DEFAULTS>) {
+  if (typeof window === 'undefined') return;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const existing = stored ? JSON.parse(stored) : {};
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...values }));
+  } catch {}
+}
+
 export default function LaunchPage() {
   const { isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
@@ -87,34 +130,73 @@ export default function LaunchPage() {
   const isDataReady = loadingState === 'ready';
 
   // Step 1: Single or Multi-GPU
-  const [gpuMode, setGpuMode] = useState<'single' | 'multi'>('single');
+  const [gpuMode, setGpuMode] = useState<'single' | 'multi'>(DEFAULTS.gpuMode);
 
   // Step 2: GPU Type selection
-  const [gpuType, setGpuType] = useState<string>("");
+  const [gpuType, setGpuType] = useState<string>(DEFAULTS.gpuType);
 
   // Step 3: GPU Count (for multi-GPU)
-  const [gpuCount, setGpuCount] = useState<number>(1);
+  const [gpuCount, setGpuCount] = useState<number>(DEFAULTS.gpuCount);
 
   // Step 4: Pricing type (interruptible/on-demand)
-  const [interruptible, setInterruptible] = useState(true);
+  const [interruptible, setInterruptible] = useState(DEFAULTS.interruptible);
 
   // Step 5: Region
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [selectedRegion, setSelectedRegion] = useState<string>(DEFAULTS.selectedRegion);
 
   // Container configuration
-  const [containerSource, setContainerSource] = useState<'image' | 'dockerfile' | 'hfspace'>('image');
-  const [dockerImage, setDockerImage] = useState("nvidia/cuda:12.6.0-runtime-ubuntu22.04");
-  const [hfSpace, setHfSpace] = useState("");
-  const [dockerfile, setDockerfile] = useState("");
-  const [command, setCommand] = useState("");
-  const [envVars, setEnvVars] = useState<{key: string, value: string}[]>([]);
-  const [ports, setPorts] = useState<{container: string, host: string}[]>([]);
-  const [httpsLbEnabled, setHttpsLbEnabled] = useState(false);
-  const [httpsLbPort, setHttpsLbPort] = useState("");
-  const [httpsLbAuth, setHttpsLbAuth] = useState(false);
-  const [runtime, setRuntime] = useState(600); // 10 minutes
+  const [containerSource, setContainerSource] = useState<'image' | 'dockerfile' | 'hfspace'>(DEFAULTS.containerSource);
+  const [dockerImage, setDockerImage] = useState(DEFAULTS.dockerImage);
+  const [hfSpace, setHfSpace] = useState(DEFAULTS.hfSpace);
+  const [dockerfile, setDockerfile] = useState(DEFAULTS.dockerfile);
+  const [command, setCommand] = useState(DEFAULTS.command);
+  const [envVars, setEnvVars] = useState<{key: string, value: string}[]>(DEFAULTS.envVars);
+  const [ports, setPorts] = useState<{container: string, host: string}[]>(DEFAULTS.ports);
+  const [httpsLbEnabled, setHttpsLbEnabled] = useState(DEFAULTS.httpsLbEnabled);
+  const [httpsLbPort, setHttpsLbPort] = useState(DEFAULTS.httpsLbPort);
+  const [httpsLbAuth, setHttpsLbAuth] = useState(DEFAULTS.httpsLbAuth);
+  const [runtime, setRuntime] = useState(DEFAULTS.runtime);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    if (loadedFromCloneRef.current) return;
+    setGpuMode(loadFromStorage('gpuMode', DEFAULTS.gpuMode));
+    setGpuType(loadFromStorage('gpuType', DEFAULTS.gpuType));
+    setGpuCount(loadFromStorage('gpuCount', DEFAULTS.gpuCount));
+    setInterruptible(loadFromStorage('interruptible', DEFAULTS.interruptible));
+    setSelectedRegion(loadFromStorage('selectedRegion', DEFAULTS.selectedRegion));
+    setContainerSource(loadFromStorage('containerSource', DEFAULTS.containerSource));
+    setDockerImage(loadFromStorage('dockerImage', DEFAULTS.dockerImage));
+    setHfSpace(loadFromStorage('hfSpace', DEFAULTS.hfSpace));
+    setDockerfile(loadFromStorage('dockerfile', DEFAULTS.dockerfile));
+    setCommand(loadFromStorage('command', DEFAULTS.command));
+    setEnvVars(loadFromStorage('envVars', DEFAULTS.envVars));
+    setPorts(loadFromStorage('ports', DEFAULTS.ports));
+    setHttpsLbEnabled(loadFromStorage('httpsLbEnabled', DEFAULTS.httpsLbEnabled));
+    setHttpsLbPort(loadFromStorage('httpsLbPort', DEFAULTS.httpsLbPort));
+    setHttpsLbAuth(loadFromStorage('httpsLbAuth', DEFAULTS.httpsLbAuth));
+    setRuntime(loadFromStorage('runtime', DEFAULTS.runtime));
+  }, []);
+
+  // Save to localStorage when values change
+  useEffect(() => { saveToStorage({ gpuMode }); }, [gpuMode]);
+  useEffect(() => { saveToStorage({ gpuType }); }, [gpuType]);
+  useEffect(() => { saveToStorage({ gpuCount }); }, [gpuCount]);
+  useEffect(() => { saveToStorage({ interruptible }); }, [interruptible]);
+  useEffect(() => { saveToStorage({ selectedRegion }); }, [selectedRegion]);
+  useEffect(() => { saveToStorage({ containerSource }); }, [containerSource]);
+  useEffect(() => { saveToStorage({ dockerImage }); }, [dockerImage]);
+  useEffect(() => { saveToStorage({ hfSpace }); }, [hfSpace]);
+  useEffect(() => { saveToStorage({ dockerfile }); }, [dockerfile]);
+  useEffect(() => { saveToStorage({ command }); }, [command]);
+  useEffect(() => { saveToStorage({ envVars }); }, [envVars]);
+  useEffect(() => { saveToStorage({ ports }); }, [ports]);
+  useEffect(() => { saveToStorage({ httpsLbEnabled }); }, [httpsLbEnabled]);
+  useEffect(() => { saveToStorage({ httpsLbPort }); }, [httpsLbPort]);
+  useEffect(() => { saveToStorage({ httpsLbAuth }); }, [httpsLbAuth]);
+  useEffect(() => { saveToStorage({ runtime }); }, [runtime]);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -235,8 +317,9 @@ export default function LaunchPage() {
         setPricing(pricingData);
         setRegions(regionsData);
 
-        // Set default GPU type if not loaded from clone
-        if (!loadedFromCloneRef.current) {
+        // Set default GPU type if not loaded from clone and no localStorage value
+        const storedGpuType = loadFromStorage('gpuType', '');
+        if (!loadedFromCloneRef.current && !storedGpuType) {
           const gpuKeys = Object.keys(gpusData);
           // Default to cheapest interruptible GPU
           const cheapestGpu = gpuKeys.reduce((cheapest, key) => {
