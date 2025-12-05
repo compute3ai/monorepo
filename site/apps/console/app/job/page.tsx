@@ -73,12 +73,12 @@ function resolveHfSpaceToImage(space: string): string {
 
 // Default values when no localStorage exists
 const DEFAULTS = {
-  gpuMode: 'single' as const,
+  gpuMode: 'single' as 'single' | 'multi',
   gpuType: '',
   gpuCount: 1,
   interruptible: true,
   selectedRegion: 'fi',
-  containerSource: 'image' as const,
+  containerSource: 'image' as 'image' | 'dockerfile' | 'hfspace',
   dockerImage: 'nvidia/cuda:12.6.0-runtime-ubuntu22.04',
   hfSpace: '',
   dockerfile: '',
