@@ -297,9 +297,10 @@ export default function JobDetailPage() {
         return;
       }
 
-      console.log('🔑 Fetching job token for cross-domain auth...');
+      const tokenUrl = `${process.env.NEXT_PUBLIC_AUTH_BACKEND}/jobs/${jobId}/token`;
+      console.log('🔑 Fetching job token from:', tokenUrl);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_BACKEND}/jobs/${jobId}/token`, {
+      const response = await fetch(tokenUrl, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
@@ -324,6 +325,8 @@ export default function JobDetailPage() {
           console.log('🔐 All cookies:', document.cookie);
 
           console.log(`✅ Job token set as ${cookieName} (expires in ${daysUntilExpiry} days)`);
+        } else {
+          console.error('❌ API returned 200 but missing token or hostname:', { token: !!data.token, hostname: data.hostname });
         }
       } else if (response.status === 400) {
         // Job not assigned yet or auth not enabled - this is expected
