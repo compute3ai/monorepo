@@ -7,7 +7,7 @@ from .jobs import Job, JobMetrics, GPUMetrics, find_job, find_by_id, find_by_hos
 from .job import BaseJob, ComfyUIJob, apply_params, find_node, find_nodes, load_template, graph_to_api, DEFAULT_OBJECT_INFO
 from .logs import LogStream, stream_logs, fetch_logs
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 __all__ = [
     "C3",
     "configure",

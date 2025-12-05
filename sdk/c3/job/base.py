@@ -36,6 +36,11 @@ class BaseJob:
             self._base_url = f"http://{self.hostname}"
         return self._base_url or ""
 
+    @property
+    def auth_headers(self) -> dict:
+        """Headers for authenticated requests. Override in subclasses for custom auth."""
+        return {"Authorization": f"Bearer {self.c3._api_key}"}
+
     @classmethod
     def get_running(cls, c3: "C3", image_filter: str = None) -> "BaseJob | None":
         """Find an existing running job, optionally filtering by image"""
@@ -151,7 +156,7 @@ class BaseJob:
             with httpx.Client(timeout=self.HEALTH_TIMEOUT) as client:
                 resp = client.get(
                     f"{self.base_url}{self.HEALTH_ENDPOINT}",
-                    headers={"Authorization": f"Bearer {self.c3._api_key}"},
+                    headers=self.auth_headers,
                 )
                 return resp.status_code == 200
         except Exception:
