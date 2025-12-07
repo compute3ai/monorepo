@@ -9,6 +9,12 @@ Developer tools and resources for [Compute3](https://compute3.ai) - GPU orchestr
 | [**c3-sdk**](./sdk) | Python SDK for Compute3 API | `pip install c3-sdk` |
 | [**c3-cli**](./cli) | Command-line interface with TUI | `pip install c3-cli` |
 
+## 🤖 Applications
+
+| App | Description |
+|-----|-------------|
+| [**tgbot**](./tgbot) | Telegram bot for AI chat with MCP tool integration |
+
 ## 🐳 Docker Images
 
 Pre-built, GPU-optimized containers cached for fast boot times on Compute3 infrastructure.

@@ -3,13 +3,22 @@
 Generate MDX documentation for ComfyUI workflow templates.
 
 Usage:
-    # Generate specific templates to content/comfyui/ with thumbnails to public/comfyui/
+    # Generate from templates.txt (default) with playground.json output
+    python gen_template_docs.py \
+        -o ../site/apps/main/content/comfyui \
+        --public ../site/apps/main/public/comfyui \
+        --playground-json ../site/apps/main/public/playground.json
+
+    # Generate specific templates
     python gen_template_docs.py -t video_wan2_2_14B_t2v flux_schnell \
         -o ../site/apps/main/content/comfyui \
         --public ../site/apps/main/public/comfyui
 
     # List available templates
     python gen_template_docs.py --list
+
+Input:
+    templates.txt - List of template IDs to generate (one per line, # comments)
 
 Output structure:
     content/comfyui/
@@ -20,6 +29,8 @@ Output structure:
     public/comfyui/
     └── {template_id}/
         └── thumbnail.webp
+
+    public/playground.json  (optional, same as index.json)
 """
 import argparse
 import json
@@ -87,22 +98,52 @@ class TemplateInfo:
     node_types: dict = field(default_factory=dict)
 
 
-def load_upstream_index(index_path: Path) -> dict[str, dict]:
-    """Load the upstream index.json and return a dict mapping template name to metadata."""
-    if not index_path.exists():
-        print(f"Warning: upstream index not found at {index_path}")
-        return {}
+def load_upstream_index(index_path: Path = None) -> dict[str, dict]:
+    """Load upstream index.json and return a dict mapping template name to metadata.
 
-    with open(index_path) as f:
-        data = json.load(f)
-
-    # Flatten the nested structure into a simple dict by template name
+    If no path provided, auto-discovers index.json files from installed
+    comfyui_workflow_templates_* packages.
+    """
     templates = {}
-    for category in data:
-        for template in category.get("templates", []):
-            name = template.get("name")
-            if name:
-                templates[name] = template
+
+    if index_path:
+        # Load from explicit path
+        if not index_path.exists():
+            print(f"Warning: upstream index not found at {index_path}")
+            return {}
+
+        with open(index_path) as f:
+            data = json.load(f)
+
+        for category in data:
+            for template in category.get("templates", []):
+                name = template.get("name")
+                if name:
+                    templates[name] = template
+    else:
+        # Auto-discover from installed packages
+        import importlib
+        import pkgutil
+
+        for finder, name, ispkg in pkgutil.iter_modules():
+            if name.startswith("comfyui_workflow_templates_media"):
+                try:
+                    mod = importlib.import_module(name)
+                    pkg_path = Path(mod.__file__).parent
+                    index_file = pkg_path / "templates" / "index.json"
+
+                    if index_file.exists():
+                        with open(index_file) as f:
+                            data = json.load(f)
+
+                        for category in data:
+                            for template in category.get("templates", []):
+                                tname = template.get("name")
+                                if tname:
+                                    templates[tname] = template
+                except Exception as e:
+                    print(f"Warning: failed to load index from {name}: {e}")
+
     return templates
 
 
@@ -543,12 +584,30 @@ def _format_title(template_id: str) -> str:
     return title.strip().title()
 
 
+def load_templates_txt(path: Path) -> list[str]:
+    """Load template IDs from a text file (one per line, # comments ignored)."""
+    if not path.exists():
+        return []
+
+    templates = []
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                templates.append(line)
+    return templates
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Generate MDX docs for ComfyUI templates",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Generate from templates.txt (default)
+  %(prog)s -o ../site/apps/main/content/comfyui \\
+      --public ../site/apps/main/public/comfyui
+
   # Generate specific templates with thumbnails to public/
   %(prog)s -t video_wan2_2_14B_t2v flux_schnell \\
       -o ../site/apps/main/content/comfyui \\
@@ -559,10 +618,12 @@ Examples:
         """
     )
     parser.add_argument("--templates", "-t", nargs="+", help="Template IDs to generate docs for")
-    parser.add_argument("--all", action="store_true", help="Generate docs for all templates")
+    parser.add_argument("--templates-file", "-f", default="templates.txt", help="File with template IDs (default: templates.txt)")
+    parser.add_argument("--all", action="store_true", help="Generate docs for all templates (ignores templates.txt)")
     parser.add_argument("--bundle", "-b", help="Filter by bundle (e.g., media-video)")
     parser.add_argument("--output-dir", "-o", default="./content/comfyui", help="Output directory for MDX files")
     parser.add_argument("--public", "-p", help="Output directory for thumbnails (public/comfyui/)")
+    parser.add_argument("--playground-json", help="Output path for playground.json (e.g., public/playground.json)")
     parser.add_argument("--index", "-i", help="Path to upstream index.json for titles/descriptions")
     parser.add_argument("--resize", "-r", type=int, metavar="WIDTH", help="Resize thumbnails to WIDTH (default: copy as-is to preserve animations)")
     parser.add_argument("--list", "-l", action="store_true", help="List available templates")
@@ -572,11 +633,14 @@ Examples:
     public_dir = Path(args.public) if args.public else None
     resize_width = args.resize
 
-    # Load upstream index for metadata
-    upstream_index = {}
+    # Load upstream index for metadata (auto-discover if not specified)
     if args.index:
         upstream_index = load_upstream_index(Path(args.index))
-        print(f"Loaded {len(upstream_index)} templates from upstream index")
+        print(f"Loaded {len(upstream_index)} templates from {args.index}")
+    else:
+        upstream_index = load_upstream_index()
+        if upstream_index:
+            print(f"Auto-discovered {len(upstream_index)} templates from installed packages")
 
     # List mode
     if args.list:
@@ -603,8 +667,15 @@ Examples:
                 continue
             template_ids.append(t.template_id)
     else:
-        parser.print_help()
-        return
+        # Default: read from templates.txt
+        script_dir = Path(__file__).parent
+        templates_file = script_dir / args.templates_file
+        template_ids = load_templates_txt(templates_file)
+        if not template_ids:
+            print(f"No templates found in {templates_file}")
+            parser.print_help()
+            return
+        print(f"Loaded {len(template_ids)} templates from {templates_file}")
 
     print(f"Generating docs for {len(template_ids)} templates...")
     if public_dir:
@@ -638,14 +709,24 @@ Examples:
 
     # Write index.json
     if index_data:
+        index_content = {
+            "templates": index_data,
+            "bundles": sorted(set(t["bundle"] for t in index_data)),
+            "count": len(index_data),
+        }
+
         index_path = output_dir / "index.json"
         with open(index_path, "w") as f:
-            json.dump({
-                "templates": index_data,
-                "bundles": sorted(set(t["bundle"] for t in index_data)),
-                "count": len(index_data),
-            }, f, indent=2)
+            json.dump(index_content, f, indent=2)
         print(f"\nIndex: {index_path}")
+
+        # Also write playground.json if requested
+        if args.playground_json:
+            playground_path = Path(args.playground_json)
+            playground_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(playground_path, "w") as f:
+                json.dump(index_content, f, indent=2)
+            print(f"Playground: {playground_path}")
 
     print(f"\nDone! Output in {output_dir}")
 

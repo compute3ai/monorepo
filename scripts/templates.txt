@@ -1,0 +1,45 @@
+# Compute3 Playground Templates
+# One template_id per line. Lines starting with # are ignored.
+# Used by gen_template_docs.py to generate documentation.
+
+# 3D
+3d_hunyuan3d-v2.1
+3d_hunyuan3d_multiview_to_model
+3d_hunyuan3d_multiview_to_model_turbo
+
+# Flux
+flux_dev_full_text_to_image
+flux_fill_inpaint_example
+flux_fill_outpaint_example
+flux_kontext_dev_basic
+flux_redux_model_example
+flux_schnell
+flux_schnell_full_text_to_image
+
+# HiDream
+hidream_e1_1
+hidream_e1_full
+hidream_i1_dev
+hidream_i1_fast
+hidream_i1_full
+
+# Image
+image2image
+image_qwen_image
+image_qwen_image_edit_2509
+image_qwen_image_instantx_controlnet
+image_qwen_image_instantx_inpainting_controlnet
+image_qwen_image_union_control_lora
+
+# Video
+video_humo
+video_hunyuan_video_1.5_720p_i2v
+video_hunyuan_video_1.5_720p_t2v
+video_wan2_2_14B_animate
+video_wan2_2_14B_flf2v
+video_wan2_2_14B_fun_camera
+video_wan2_2_14B_fun_control
+video_wan2_2_14B_fun_inpaint
+video_wan2_2_14B_i2v
+video_wan2_2_14B_s2v
+video_wan2_2_14B_t2v
