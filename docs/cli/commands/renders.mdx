@@ -1,0 +1,91 @@
+---
+title: c3 renders
+description: Render management commands
+---
+
+## list
+
+List renders.
+
+```bash
+c3 renders list
+c3 renders list -s completed
+c3 renders list -t hidream_i1_full
+c3 renders list -o json
+```
+
+**Options:**
+- `-s, --state` - Filter by state: `pending`, `running`, `completed`, `failed`
+- `-t, --template` - Filter by template name
+- `--type` - Filter by render type (e.g., `comfyui`)
+- `-o, --output` - Output format: `table` or `json`
+
+## create
+
+Create a render.
+
+```bash
+c3 renders create <template> -p <prompt> [options]
+
+# Examples
+c3 renders create hidream_i1_full -p "a cat in space"
+c3 renders create hidream_i1_full -p "sunset over mountains" --gpu L40S --region kr
+c3 renders create hidream_i1_full -p "portrait of a robot" --wait
+```
+
+**Arguments:**
+- `template` - Template name (required)
+
+**Options:**
+- `-p, --prompt` - Text prompt (required)
+- `-g, --gpu` - GPU type (default: L40S)
+- `-r, --region` - Region code (e.g., `kr`)
+- `-t, --type` - Render type (default: comfyui)
+- `-w, --wait` - Wait for render to complete
+- `--notify` - Webhook URL for completion notification
+- `-o, --output` - Output format: `table` or `json`
+
+## get
+
+Get render details.
+
+```bash
+c3 renders get <render_id>
+c3 renders get <render_id> -o json
+```
+
+## status
+
+Get render status (lightweight polling endpoint).
+
+```bash
+c3 renders status <render_id>
+c3 renders status <render_id> -w   # Watch live
+c3 renders status <render_id> -o json
+```
+
+**Options:**
+- `-w, --watch` - Watch status live until completion
+- `-o, --output` - Output format: `table` or `json`
+
+## cancel
+
+Cancel a render.
+
+```bash
+c3 renders cancel <render_id>
+```
+
+## Example Workflow
+
+```bash
+# Create a render and wait for completion
+c3 renders create hidream_i1_full -p "a cat in space" --wait
+
+# Or create and poll separately
+c3 renders create hidream_i1_full -p "a cat in space"
+# Returns: Render created: abc123...
+
+c3 renders status abc123 --watch
+# Watches until completion, then shows result URL
+```

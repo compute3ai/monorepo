@@ -7,7 +7,7 @@ from rich.prompt import Prompt
 from c3 import C3, APIError, configure
 from c3.config import CONFIG_FILE
 
-from . import billing, comfyui, instances, jobs, llm, user
+from . import billing, comfyui, instances, jobs, llm, renders, user
 
 console = Console()
 
@@ -61,34 +61,56 @@ app.add_typer(comfyui.app, name="comfyui")
 app.add_typer(instances.app, name="instances")
 app.add_typer(jobs.app, name="jobs")
 app.add_typer(llm.app, name="llm")
+app.add_typer(renders.app, name="renders")
 app.add_typer(user.app, name="user")
 
 
 @app.command("configure")
 def configure_cmd():
-    """Configure C3 CLI with your API key"""
+    """Configure C3 CLI with your API key and API URL"""
     import getpass
+    from c3.config import get_api_key, get_api_url, DEFAULT_API_URL
 
     console.print("\n[bold cyan]C3 CLI Configuration[/bold cyan]\n")
+
+    # Show current config
+    current_key = get_api_key()
+    current_url = get_api_url()
+
+    if current_key:
+        key_preview = current_key[:4] + "..." + current_key[-4:] if len(current_key) > 8 else "****"
+        console.print(f"Current API key: [dim]{key_preview}[/dim]")
+    if current_url and current_url != DEFAULT_API_URL:
+        console.print(f"Current API URL: [dim]{current_url}[/dim]")
+
+    console.print()
     console.print("Get your API key at [link=https://compute3.ai/dashboard]compute3.ai/dashboard[/link]\n")
 
-    api_key = getpass.getpass("Enter your API key: ")
+    # API Key
+    api_key = getpass.getpass("API key (enter to keep current): ") if current_key else getpass.getpass("API key: ")
+    api_key = api_key.strip() if api_key else None
 
-    if not api_key or not api_key.strip():
+    if not api_key and not current_key:
         console.print("[red]No API key provided[/red]")
         raise typer.Exit(1)
 
-    api_key = api_key.strip()
+    # API URL
+    url_prompt = f"API URL (enter for default, current: {current_url}): " if current_url != DEFAULT_API_URL else "API URL (enter for default): "
+    api_url = Prompt.ask(url_prompt, default="")
+    api_url = api_url.strip() if api_url else None
 
-    # Show preview
-    if len(api_key) > 8:
-        preview = api_key[:4] + "..." + api_key[-4:]
-    else:
-        preview = "****"
-    console.print(f"[dim]Key preview: {preview}[/dim]")
+    # Only update what changed
+    final_key = api_key or current_key
+    final_url = api_url if api_url else (current_url if current_url != DEFAULT_API_URL else None)
 
-    configure(api_key)
-    console.print(f"\n[green]✓[/green] API key saved to {CONFIG_FILE}")
+    configure(final_key, final_url)
+
+    console.print(f"\n[green]✓[/green] Config saved to {CONFIG_FILE}")
+    if api_key:
+        preview = api_key[:4] + "..." + api_key[-4:] if len(api_key) > 8 else "****"
+        console.print(f"  API key: {preview}")
+    if final_url:
+        console.print(f"  API URL: {final_url}")
     console.print("\nTest your setup with: [cyan]c3 billing balance[/cyan]\n")
 
 

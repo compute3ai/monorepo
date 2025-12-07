@@ -1,0 +1,98 @@
+---
+title: Templates
+description: Available ComfyUI workflow templates
+---
+
+## Overview
+
+Templates are pre-configured ComfyUI workflows optimized for specific generation tasks. Each template pre-loads the required models for fast execution.
+
+## Image Generation
+
+### Flux Models
+
+| Template | Description | Recommended GPU |
+|----------|-------------|-----------------|
+| `flux_schnell` | Fast Flux model, 4 steps | A6000, L40S |
+| `flux_dev_full_text_to_image` | Full Flux Dev model | L40S, A100 |
+
+### Other Image Models
+
+| Template | Description | Recommended GPU |
+|----------|-------------|-----------------|
+| `sdxl_simple_example` | SDXL base model | A6000, L40S |
+| `image_qwen_image` | Qwen image model | L40S |
+| `image_chroma_text_to_image` | Chroma model | L40S |
+| `hidream_i1_full` | HiDream image model | L40S, A100 |
+
+## Video Generation
+
+| Template | Description | Recommended GPU |
+|----------|-------------|-----------------|
+| `video_wan2_2_14B_t2v` | Wan 2.2 14B text-to-video | A100, H100 |
+| `video_wan2.1_alpha_t2v_14B` | Wan 2.1 alpha text-to-video | A100, H100 |
+| `video_hunyuan_video_1.5_720p_t2v` | Hunyuan 1.5 720p | A100, H100 |
+| `hunyuan_video_text_to_video` | Hunyuan base video | L40S, A100 |
+
+## Template Parameters
+
+All templates support these common parameters:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `prompt` | string | - | Text prompt for generation |
+| `negative` | string | `""` | Negative prompt (things to avoid) |
+| `width` | int | 1024 | Output width in pixels |
+| `height` | int | 1024 | Output height in pixels |
+| `steps` | int | 20 | Number of sampling steps |
+| `cfg` | float | 5.0 | Classifier-free guidance scale |
+| `seed` | int | random | Random seed for reproducibility |
+
+<Note>
+Optimal parameters vary by template. Flux Schnell works best with 4 steps, while other models may need 20-50 steps.
+</Note>
+
+## Example: Flux Schnell
+
+```python
+response = httpx.post(
+    "https://api.compute3.ai/api/renders",
+    headers={"X-BACKEND-API-KEY": BACKEND_API_KEY},
+    json={
+        "user_id": "user-uuid",
+        "params": {
+            "workflow": "flux_schnell",
+            "prompt": "a cyberpunk city at night, neon lights, rain",
+            "width": 1024,
+            "height": 1024,
+            "steps": 4,  # Flux Schnell is optimized for 4 steps
+        }
+    }
+)
+```
+
+## Example: Video Generation
+
+```python
+response = httpx.post(
+    "https://api.compute3.ai/api/renders",
+    headers={"X-BACKEND-API-KEY": BACKEND_API_KEY},
+    json={
+        "user_id": "user-uuid",
+        "params": {
+            "workflow": "video_wan2_2_14B_t2v",
+            "prompt": "a timelapse of clouds moving over mountains",
+            "gpu_type": "a100",  # Video generation needs more VRAM
+        }
+    }
+)
+```
+
+## GPU Recommendations
+
+| Use Case | Recommended GPUs |
+|----------|------------------|
+| Fast image (Flux Schnell) | A6000, L40S |
+| High-quality image | L40S, A100 |
+| Video generation | A100, H100 |
+| Large batch processing | A100, H100 |

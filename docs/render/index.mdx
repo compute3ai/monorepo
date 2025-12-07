@@ -1,0 +1,105 @@
+---
+title: Render API
+description: Serverless GPU rendering for ComfyUI workflows
+---
+
+## Overview
+
+The Render API provides serverless GPU rendering for ComfyUI workflows. Submit a render request and receive results via webhook or polling - no GPU management required.
+
+<Info>
+The Render API is available via CLI, SDK, or REST API using your standard API key.
+</Info>
+
+## Quick Start
+
+<CodeGroup>
+```bash CLI
+c3 renders create hidream_i1_full -p "a cat in space" --wait
+```
+
+```python SDK
+from c3 import C3
+
+c3 = C3()
+render = c3.renders.create(
+    params={"template": "hidream_i1_full", "prompt": "a cat in space"}
+)
+```
+</CodeGroup>
+
+## How It Works
+
+1. **Submit** - POST a render request with your workflow template and parameters
+2. **Process** - We automatically provision a GPU, run your workflow, and upload results to S3
+3. **Receive** - Get a signed URL to your output via webhook or polling
+
+```
+POST /api/renders
+       │
+       ▼
+┌─────────────────┐
+│  Balance Check  │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  GPU Provision  │  (automatic)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Run Workflow   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Upload to S3   │
+└────────┬────────┘
+         │
+         ▼
+   Webhook / Poll
+```
+
+## Render States
+
+| State | Description |
+|-------|-------------|
+| `pending` | Waiting for GPU instance |
+| `running` | Executing on GPU |
+| `completed` | Finished successfully |
+| `failed` | Failed (see error field) |
+
+## Billing
+
+Renders are billed per-request at a fixed rate. Your balance is reserved when the render is submitted and charged upon successful completion. Failed or cancelled renders are not charged.
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/renders` | Create a render |
+| `GET` | `/api/renders` | List renders |
+| `GET` | `/api/renders/{id}` | Get render details |
+| `GET` | `/api/renders/{id}/status` | Get render status (lightweight) |
+| `DELETE` | `/api/renders/{id}` | Cancel/delete render |
+
+## Authentication
+
+Authenticate using your API key via header or Bearer token:
+
+```bash
+# Using X-API-KEY header
+curl -X POST https://api.compute3.ai/api/renders \
+  -H "X-API-KEY: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "comfyui", "params": {"template": "hidream_i1_full", "prompt": "..."}}'
+
+# Or using Bearer token
+curl -X POST https://api.compute3.ai/api/renders \
+  -H "Authorization: Bearer your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "comfyui", "params": {"template": "hidream_i1_full", "prompt": "..."}}'
+```
+
+See [Authentication](/authentication) for more details.

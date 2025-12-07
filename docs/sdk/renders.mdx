@@ -1,0 +1,168 @@
+---
+title: Renders
+description: SDK renders methods
+---
+
+## Create Render
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+render = c3.renders.create(
+    params={
+        "template": "hidream_i1_full",
+        "prompt": "a cat in space",
+        "gpu_type": "L40S",
+        "region": "kr",
+    },
+    render_type="comfyui",
+    notify_url="https://myapp.com/webhook",  # optional
+)
+
+print(f"Render: {render.render_id}")
+print(f"State: {render.state}")
+```
+
+### Create Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `params` | dict | required | Render parameters (see below) |
+| `render_type` | str | "comfyui" | Render type |
+| `notify_url` | str | None | Webhook URL for completion |
+
+### Params Object
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `template` | str | Yes | Template name (e.g., `hidream_i1_full`) |
+| `prompt` | str | Yes | Text prompt |
+| `gpu_type` | str | No | GPU type (default: L40S) |
+| `region` | str | No | Region code (e.g., `kr`) |
+
+Additional parameters depend on the template. See [Templates](/render/templates).
+
+## List Renders
+
+```python
+renders = c3.renders.list()
+renders = c3.renders.list(state="completed")
+renders = c3.renders.list(template="hidream_i1_full")
+
+for render in renders:
+    print(f"{render.render_id}: {render.state}")
+```
+
+### List Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `state` | str | Filter by state |
+| `template` | str | Filter by template |
+| `type` | str | Filter by render type |
+
+## Get Render
+
+```python
+render = c3.renders.get("render_id")
+```
+
+### Render Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `render_id` | str | Render UUID |
+| `state` | str | `pending`, `running`, `completed`, `failed` |
+| `template` | str | Template name |
+| `render_type` | str | Render type (e.g., `comfyui`) |
+| `result_url` | str | Signed URL to output (when completed) |
+| `error` | str | Error message (when failed) |
+| `created_at` | float | Created timestamp |
+| `started_at` | float | Started timestamp |
+| `completed_at` | float | Completed timestamp |
+
+## Get Status
+
+Lightweight polling endpoint for checking render progress.
+
+```python
+status = c3.renders.status("render_id")
+print(f"State: {status.state}")
+if status.progress:
+    print(f"Progress: {status.progress:.0%}")
+```
+
+### RenderStatus Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `render_id` | str | Render UUID |
+| `state` | str | Current state |
+| `progress` | float | Progress (0.0-1.0), if available |
+
+## Cancel Render
+
+```python
+c3.renders.cancel("render_id")
+```
+
+Only `pending` renders can be cancelled. Running renders must complete or timeout.
+
+## Polling Example
+
+```python
+import time
+from c3 import C3
+
+c3 = C3()
+
+# Create render
+render = c3.renders.create(
+    params={
+        "template": "hidream_i1_full",
+        "prompt": "a cat in space",
+    }
+)
+print(f"Created: {render.render_id}")
+
+# Poll until complete
+while True:
+    status = c3.renders.status(render.render_id)
+    print(f"State: {status.state}")
+
+    if status.state in ("completed", "failed"):
+        break
+
+    time.sleep(2)
+
+# Get final result
+render = c3.renders.get(render.render_id)
+if render.result_url:
+    print(f"Result: {render.result_url}")
+if render.error:
+    print(f"Error: {render.error}")
+```
+
+## Webhook Integration
+
+Set `notify_url` to receive a webhook when the render completes:
+
+```python
+render = c3.renders.create(
+    params={"template": "hidream_i1_full", "prompt": "..."},
+    notify_url="https://myapp.com/api/render-complete",
+)
+```
+
+Webhook payload:
+
+```json
+{
+  "id": "render-uuid",
+  "status": "completed",
+  "result_url": "https://...",
+  "error": null
+}
+```

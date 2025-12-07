@@ -5,6 +5,7 @@ from .billing import Billing
 from .jobs import Jobs
 from .user import UserAPI
 from .instances import Instances
+from .renders import Renders
 
 
 class C3:
@@ -50,6 +51,7 @@ class C3:
         self.jobs = Jobs(self._http)
         self.user = UserAPI(self._http)
         self.instances = Instances(self._http)
+        self.renders = Renders(self._http)
 
     @property
     def api_url(self) -> str:

@@ -7,6 +7,7 @@ import JobTransactionRow from "../../components/JobTransactionRow";
 import TopUpTransactionRow from "../../components/TopUpTransactionRow";
 import LLMTransactionRow from "../../components/LLMTransactionRow";
 import InvoiceTransactionRow from "../../components/InvoiceTransactionRow";
+import RenderTransactionRow from "../../components/RenderTransactionRow";
 
 interface Transaction {
   id: string;
@@ -168,7 +169,7 @@ export default function HistoryPage() {
 
           {/* Type Filter */}
           <div className="flex gap-2 mb-8">
-            {['all', 'job', 'llm', 'top_up', 'invoice'].map((type) => (
+            {['all', 'job', 'render', 'llm', 'top_up', 'invoice'].map((type) => (
               <button
                 key={type}
                 onClick={() => handleFilterChange(type)}
@@ -178,13 +179,13 @@ export default function HistoryPage() {
                     : 'btn-secondary'
                 }`}
               >
-                {type === 'top_up' ? 'Top Up' : type.charAt(0).toUpperCase() + type.slice(1)}
+                {type === 'top_up' ? 'Top Up' : type === 'llm' ? 'LLM' : type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
           </div>
 
           {loading && <div className="text-gray-600">Loading transactions...</div>}
-          {error && <div className="text-red-600 mb-4">Error: {error}</div>}
+          {error && <div className="text-red-600 mb-4">Error: {typeof error === 'string' ? error : JSON.stringify(error)}</div>}
 
           {!loading && !error && transactions.length === 0 && (
             <div className="bg-white p-8 rounded-lg shadow text-center">
@@ -291,6 +292,15 @@ export default function HistoryPage() {
                     } else if (tx.transaction_type === 'invoice') {
                       return (
                         <InvoiceTransactionRow
+                          key={tx.id}
+                          tx={tx}
+                          isExpanded={expandedTxId === tx.id}
+                          onToggle={() => handleTransactionToggle(tx.id)}
+                        />
+                      );
+                    } else if (tx.transaction_type === 'render') {
+                      return (
+                        <RenderTransactionRow
                           key={tx.id}
                           tx={tx}
                           isExpanded={expandedTxId === tx.id}

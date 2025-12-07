@@ -4,6 +4,7 @@ from .config import configure, GHCR_IMAGES, COMFYUI_IMAGE
 from .http import APIError
 from .instances import GPUType, GPUConfig, Region, GPUPricing, PricingTier
 from .jobs import Job, JobMetrics, GPUMetrics, find_job, find_by_id, find_by_hostname, find_by_ip
+from .renders import Render, RenderStatus
 from .job import BaseJob, ComfyUIJob, apply_params, find_node, find_nodes, load_template, graph_to_api, DEFAULT_OBJECT_INFO
 from .logs import LogStream, stream_logs, fetch_logs
 
@@ -25,6 +26,9 @@ __all__ = [
     "Job",
     "JobMetrics",
     "GPUMetrics",
+    # Renders API
+    "Render",
+    "RenderStatus",
     # Job lookup utils
     "find_job",
     "find_by_id",

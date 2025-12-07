@@ -1,0 +1,225 @@
+---
+title: Quickstart
+description: Get started with the Render API
+---
+
+## Create a Render
+
+Submit a render request with your workflow template and parameters:
+
+<CodeGroup>
+
+```python Python
+import httpx
+
+BACKEND_API_KEY = "your-backend-key"
+BASE_URL = "https://api.compute3.ai"
+
+response = httpx.post(
+    f"{BASE_URL}/api/renders",
+    headers={"X-BACKEND-API-KEY": BACKEND_API_KEY},
+    json={
+        "user_id": "user-uuid",
+        "params": {
+            "workflow": "flux_schnell",
+            "prompt": "a beautiful sunset over mountains",
+            "width": 1024,
+            "height": 1024,
+            "steps": 4,
+        },
+        "notify_url": "https://your-webhook.com/callback"  # Optional
+    }
+)
+
+render = response.json()
+print(f"Render ID: {render['id']}")
+print(f"State: {render['state']}")
+```
+
+```bash curl
+curl -X POST https://api.compute3.ai/api/renders \
+  -H "X-BACKEND-API-KEY: your-backend-key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user-uuid",
+    "params": {
+      "workflow": "flux_schnell",
+      "prompt": "a beautiful sunset over mountains",
+      "width": 1024,
+      "height": 1024,
+      "steps": 4
+    },
+    "notify_url": "https://your-webhook.com/callback"
+  }'
+```
+
+</CodeGroup>
+
+### Request Parameters
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `user_id` | string | Yes | User ID to bill |
+| `params` | object | Yes | Workflow parameters (see below) |
+| `notify_url` | string | No | Webhook URL for completion notification |
+
+### Workflow Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `workflow` | string | Yes | Template name (e.g., `flux_schnell`) |
+| `prompt` | string | No | Text prompt for generation |
+| `negative` | string | No | Negative prompt |
+| `width` | int | No | Output width (default: 1024) |
+| `height` | int | No | Output height (default: 1024) |
+| `steps` | int | No | Sampling steps (default: 20) |
+| `cfg` | float | No | CFG scale (default: 5.0) |
+| `seed` | int | No | Random seed (auto-generated if not set) |
+| `gpu_type` | string | No | GPU type (default: a6000) |
+| `region` | string | No | Preferred region |
+
+## Poll for Status
+
+Use the lightweight status endpoint for polling:
+
+<CodeGroup>
+
+```python Python
+import time
+
+render_id = render["id"]
+
+while True:
+    status = httpx.get(
+        f"{BASE_URL}/api/renders/{render_id}/status",
+        headers={"X-BACKEND-API-KEY": BACKEND_API_KEY}
+    ).json()
+
+    print(f"State: {status['state']}")
+
+    if status["state"] == "completed":
+        print(f"Result: {status['result_url']}")
+        break
+    elif status["state"] == "failed":
+        print(f"Error: {status['error']}")
+        break
+
+    time.sleep(5)
+```
+
+```bash curl
+curl https://api.compute3.ai/api/renders/{render_id}/status \
+  -H "X-BACKEND-API-KEY: your-backend-key"
+```
+
+</CodeGroup>
+
+### Status Response
+
+```json
+{
+  "id": "render-uuid",
+  "state": "completed",
+  "result_url": "https://signed-url-to-output.png",
+  "error": null
+}
+```
+
+## Webhook Notifications
+
+If you provide a `notify_url`, we'll POST the result when the render completes:
+
+### Success
+
+```json
+{
+  "id": "render-uuid",
+  "status": "success",
+  "result_url": "https://signed-url-to-output.png",
+  "type": "comfyui",
+  "template": "flux_schnell",
+  "gpu_type": "a6000",
+  "user_id": "user-uuid",
+  "started_at": "2024-01-15T10:30:00Z",
+  "completed_at": "2024-01-15T10:30:45Z"
+}
+```
+
+### Failure
+
+```json
+{
+  "id": "render-uuid",
+  "status": "failed",
+  "error": "Timeout after 1800s",
+  "type": "comfyui",
+  "template": "flux_schnell",
+  "gpu_type": "a6000",
+  "user_id": "user-uuid"
+}
+```
+
+### Cancelled
+
+```json
+{
+  "id": "render-uuid",
+  "status": "cancelled",
+  "type": "comfyui",
+  "template": "flux_schnell",
+  "gpu_type": "a6000",
+  "user_id": "user-uuid"
+}
+```
+
+## List Renders
+
+<CodeGroup>
+
+```python Python
+renders = httpx.get(
+    f"{BASE_URL}/api/renders",
+    headers={"X-BACKEND-API-KEY": BACKEND_API_KEY},
+    params={
+        "user_id": "user-uuid",  # Optional filter
+        "state": "completed",    # Optional filter
+        "template": "flux_schnell"  # Optional filter
+    }
+).json()
+
+for r in renders["items"]:
+    print(f"{r['id']}: {r['state']}")
+```
+
+```bash curl
+curl "https://api.compute3.ai/api/renders?user_id=user-uuid&state=completed" \
+  -H "X-BACKEND-API-KEY: your-backend-key"
+```
+
+</CodeGroup>
+
+## Cancel a Render
+
+Cancel a pending render (releases billing reservation):
+
+<CodeGroup>
+
+```python Python
+result = httpx.delete(
+    f"{BASE_URL}/api/renders/{render_id}",
+    headers={"X-BACKEND-API-KEY": BACKEND_API_KEY}
+).json()
+
+print(result)  # {"status": "cancelled", "id": "..."}
+```
+
+```bash curl
+curl -X DELETE https://api.compute3.ai/api/renders/{render_id} \
+  -H "X-BACKEND-API-KEY: your-backend-key"
+```
+
+</CodeGroup>
+
+<Note>
+Running renders cannot be cancelled - they must complete or timeout.
+</Note>

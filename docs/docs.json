@@ -68,9 +68,23 @@
               "sdk/index",
               "sdk/billing",
               "sdk/jobs",
+              "sdk/renders",
               "sdk/logs",
               "sdk/comfyui",
               "sdk/reference"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Render",
+        "groups": [
+          {
+            "group": "Render API",
+            "pages": [
+              "render/index",
+              "render/quickstart",
+              "render/templates"
             ]
           }
         ]
@@ -94,6 +108,7 @@
               "cli/commands/instances",
               "cli/commands/jobs",
               "cli/commands/llm",
+              "cli/commands/renders",
               "cli/commands/user"
             ]
           },
@@ -149,14 +164,14 @@
             ]
           },
           {
-            "group": "API Keys",
+            "group": "Render",
             "openapi": "openapi.json",
             "pages": [
-              "POST /api/keys",
-              "GET /api/keys",
-              "GET /api/keys/{key_id}",
-              "PATCH /api/keys/{key_id}",
-              "DELETE /api/keys/{key_id}"
+              "POST /api/renders",
+              "GET /api/renders",
+              "GET /api/renders/{render_id}",
+              "GET /api/renders/{render_id}/status",
+              "DELETE /api/renders/{render_id}"
             ]
           }
         ]
