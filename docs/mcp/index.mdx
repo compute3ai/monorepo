@@ -1,0 +1,95 @@
+---
+title: MCP Server
+description: Connect AI assistants to Compute3 using Model Context Protocol
+---
+
+The Compute3 MCP server exposes the full Compute3 API via [Model Context Protocol](https://modelcontextprotocol.io), enabling AI assistants like Claude to manage GPU jobs, check balances, and more.
+
+## Endpoint
+
+```
+https://api.compute3.ai/mcp
+```
+
+## Authentication
+
+Provide your API key as a Bearer token in the Authorization header. Get your API key from the [Dashboard](https://console.compute3.ai).
+
+## Claude Code
+
+Add to your Claude Code MCP settings (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "compute3": {
+      "type": "url",
+      "url": "https://api.compute3.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Or via CLI:
+
+```bash
+claude mcp add compute3 --transport http https://api.compute3.ai/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "compute3": {
+      "type": "url",
+      "url": "https://api.compute3.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+## Available Tools
+
+Once connected, Claude can use these tools:
+
+| Tool | Description |
+|------|-------------|
+| `get_balance` | Check your account balance |
+| `list_transactions` | View transaction history |
+| `create_job` | Launch a GPU compute job |
+| `list_jobs` | List your jobs |
+| `get_job` | Get job details |
+| `get_job_logs` | Fetch job logs |
+| `get_job_metrics` | Get GPU metrics |
+| `extend_job` | Extend job runtime |
+| `cancel_job` | Stop a running job |
+| `create_render` | Submit a render job |
+| `list_renders` | List your renders |
+| `get_render` | Get render details |
+| `get_render_status` | Check render status |
+| `get_user` | Get account info |
+| `update_user` | Update account settings |
+
+## Example Usage
+
+Once configured, you can ask Claude:
+
+- "Check my Compute3 balance"
+- "Launch an L40S GPU job running nvidia-smi"
+- "Show me my running jobs"
+- "Get the logs for job xyz"
+- "Cancel job abc"
+
+## Transport
+
+The server uses streamable HTTP transport (recommended for web clients). Health checks are available at `/mcp/health`.
