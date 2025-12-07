@@ -82,7 +82,7 @@
           {
             "group": "MCP Server",
             "pages": [
-              "mcp/index"
+              "mcp-server/index"
             ]
           }
         ]
