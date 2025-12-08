@@ -1,17 +1,194 @@
 ---
 title: Authentication
-description: Configure API key authentication for Compute3
+description: Authentication methods for Compute3 platform and API
 ---
 
 # Authentication
 
-Compute3 uses API keys for authentication. You can get your API key from the [console](https://console.compute3.ai).
+Compute3 supports three authentication methods depending on how you're accessing the platform:
 
-## Authentication Methods
+1. **Wallet Authentication** - For web users with Ethereum wallets
+2. **Turnkey Authentication** - For web users with email/passkey
+3. **API Key Authentication** - For SDK, CLI, and direct API access
+
+## Wallet Authentication
+
+Wallet authentication uses Ethereum wallet signatures to authenticate users on the web platform.
+
+### How It Works
+
+1. **Connect Wallet** - User connects their Ethereum wallet (MetaMask, WalletConnect, etc.)
+2. **Challenge Request** - Frontend requests a challenge from the backend
+3. **Sign Message** - User signs the challenge message with their wallet
+4. **Verification** - Backend verifies the signature and issues a JWT token
+
+### Implementation Flow
+
+```javascript
+// Step 1: Get challenge from backend
+const challengeRes = await fetch(`${API_BASE}/auth/wallet/challenge`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ wallet: walletAddress })
+});
+
+const { timestamp, message } = await challengeRes.json();
+
+// Step 2: Sign message with wallet
+const signature = await signMessageAsync({ message });
+
+// Step 3: Verify signature and get JWT
+const verifyRes = await fetch(`${API_BASE}/auth/wallet/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({
+    wallet: walletAddress,
+    signature,
+    timestamp
+  })
+});
+
+const { token, expires_in, user_id } = await verifyRes.json();
+```
+
+### API Endpoints
+
+#### POST /auth/wallet/challenge
+
+Request a challenge message to sign.
+
+**Request:**
+```json
+{
+  "wallet": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+}
+```
+
+**Response:**
+```json
+{
+  "timestamp": 1732136789,
+  "message": "Sign in to Compute3\n\nTimestamp: 1732136789\nWallet: 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+}
+```
+
+#### POST /auth/wallet/login
+
+Verify the signed message and get JWT token.
+
+**Request:**
+```json
+{
+  "wallet": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  "signature": "0xabc...",
+  "timestamp": 1732136789
+}
+```
+
+**Response:**
+```json
+{
+  "token": "eyJ...",
+  "expires_in": 2592000,
+  "user_id": "uuid",
+  "tier": "free"
+}
+```
+
+### Security Notes
+
+- Challenges expire after 60 seconds to prevent replay attacks
+- The backend recovers the signing address and verifies it matches the provided wallet
+- New users are automatically created with a FREE tier on first login
+- JWT tokens are valid for 30 days
+
+## Turnkey Authentication
+
+Turnkey authentication uses email/passkey login via [Turnkey](https://turnkey.com) for web users.
+
+### How It Works
+
+1. **Turnkey Login** - User logs in via Turnkey modal (email + passkey)
+2. **Session Token** - Turnkey SDK provides a session token
+3. **Token Exchange** - Frontend exchanges Turnkey token for Compute3 JWT
+4. **Authentication** - User is authenticated with Compute3 backend
+
+### Implementation Flow
+
+```javascript
+// Step 1: User logs in via Turnkey SDK
+const { user, session } = useTurnkey();
+await handleLogin({
+  logoLight: "/favicon.svg",
+  logoDark: "/favicon.svg",
+  title: "Welcome to Compute3",
+});
+
+// Step 2: Exchange Turnkey session token for Compute3 JWT
+const loginRes = await fetch(`${AUTH_BACKEND}/auth/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ token: session.token }),
+});
+
+const { token, expires_in } = await loginRes.json();
+
+// Step 3: Store JWT in cookie
+cookieUtils.setWithMaxAge('auth_token', token, expires_in);
+```
+
+### API Endpoint
+
+#### POST /auth/login
+
+Exchange Turnkey session token for Compute3 JWT.
+
+**Request:**
+```json
+{
+  "token": "eyJ..."
+}
+```
+
+**Response:**
+```json
+{
+  "token": "eyJ...",
+  "expires_in": 2592000
+}
+```
+
+### Environment Variables
+
+- `NEXT_PUBLIC_AUTH_BACKEND` - Backend URL for authentication (e.g., `https://api.compute3.ai`)
+- `NEXT_PUBLIC_API_BASE` - Alternative backend URL (some components use this)
+- `NEXT_PUBLIC_COOKIE_VALIDITY` - Cookie validity in days (default: 15)
+
+### Session Storage
+
+Turnkey stores session data in:
+- `localStorage['@turnkey/session/v3']` - Active session
+- `localStorage['@turnkey/active-session-key']` - Active session key
+- `localStorage['@turnkey/all-session-keys']` - All session keys
+- IndexedDB `turnkey` database
+
+## API Key Authentication
+
+API key authentication is used for SDK, CLI, and direct API access.
+
+### Getting Your API Key
+
+1. Visit the [console](https://console.compute3.ai)
+2. Navigate to the API Keys section
+3. Click "Generate New API Key"
+4. Copy and securely store your API key
+
+### Authentication Methods
 
 There are three ways to provide your API key:
 
-### 1. Environment Variable (Recommended)
+#### 1. Environment Variable (Recommended)
 
 Set the `C3_API_KEY` environment variable:
 
@@ -21,7 +198,7 @@ export C3_API_KEY=your_api_key_here
 
 Add this to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist across sessions.
 
-### 2. Configuration File
+#### 2. Configuration File
 
 Create a config file at `~/.c3/config`:
 
@@ -37,7 +214,7 @@ Or use the CLI configure command:
 c3 configure
 ```
 
-### 3. Pass Directly (SDK Only)
+#### 3. Pass Directly (SDK Only)
 
 Pass the API key directly to the SDK constructor:
 
@@ -51,7 +228,51 @@ c3 = C3(api_key="your_api_key_here")
 Avoid hardcoding API keys in source code. Use environment variables or config files instead.
 </Warning>
 
-## Priority Order
+### Using API Keys
+
+#### SDK (Python)
+
+```python
+from c3 import C3
+
+# API key from environment variable or config file
+c3 = C3()
+
+# Or pass directly
+c3 = C3(api_key="your_api_key_here")
+
+# Make authenticated requests
+jobs = c3.jobs.list()
+```
+
+#### CLI
+
+```bash
+# Configure once
+c3 configure
+
+# Use CLI commands
+c3 jobs list
+c3 instances launch pytorch/pytorch:2.0.0 -g L40S
+```
+
+#### Direct API Requests
+
+Include your API key in the `X-API-KEY` header:
+
+```bash
+curl -X GET "https://api.compute3.ai/api/jobs" \
+  -H "X-API-KEY: your_api_key_here"
+```
+
+Or use Bearer token authentication:
+
+```bash
+curl -X GET "https://api.compute3.ai/api/jobs" \
+  -H "Authorization: Bearer your_api_key_here"
+```
+
+### Priority Order
 
 When multiple authentication methods are configured, the priority is:
 
@@ -59,7 +280,7 @@ When multiple authentication methods are configured, the priority is:
 2. Config file (`~/.c3/config`)
 3. Direct parameter (SDK only)
 
-## Config File Format
+### Config File Format
 
 The config file uses a simple key-value format:
 
@@ -75,30 +296,62 @@ Supported configuration options:
 | `C3_API_KEY` | Your API key | (required) |
 | `C3_API_URL` | API base URL | `https://api.compute3.ai` |
 
-## API Key Security
+## Security Best Practices
 
 <Info>
-Your API key provides full access to your Compute3 account. Keep it secure.
+Your authentication credentials provide full access to your Compute3 account. Keep them secure.
 </Info>
 
-Best practices:
+### General Security
 
-- Never commit API keys to version control
+- Never commit credentials to version control
 - Use environment variables in production
-- Rotate keys periodically via the [console](https://console.compute3.ai)
-- Use separate keys for different environments
+- Rotate credentials periodically
+- Use separate credentials for different environments
+- Enable 2FA/passkeys when available (Turnkey)
+
+### API Key Security
+
+- Store API keys in secure environment variables or config files
+- Set appropriate file permissions (`chmod 600 ~/.c3/config`)
+- Delete unused API keys from the console
+- Monitor API key usage for suspicious activity
+
+### Web Authentication Security
+
+- Wallet authentication uses cryptographic signatures (no password required)
+- Turnkey passkeys provide phishing-resistant authentication
+- JWT tokens expire after 30 days
+- Tokens are stored in secure HTTP-only cookies (where possible)
 
 ## Managing API Keys
 
-You can create, list, and delete API keys via the API:
+You can manage API keys through the [console](https://console.compute3.ai):
 
-```python
-from c3 import C3
+- **Create** - Generate new API keys for different applications
+- **List** - View all active API keys and their creation dates
+- **Delete** - Revoke API keys that are no longer needed
 
-c3 = C3()
+<Note>
+Deleting an API key immediately revokes access. Update your applications before deleting keys in use.
+</Note>
 
-# API key management is available through the REST API
-# See API Reference for details
-```
+## Troubleshooting
 
-Or use the [console](https://console.compute3.ai) to manage your keys.
+### Wallet Authentication Issues
+
+- **Signature verification failed** - Ensure you're signing the exact message returned by `/auth/wallet/challenge`
+- **Challenge expired** - Request a new challenge (60 second timeout)
+- **Wallet mismatch** - Ensure the wallet address in the request matches the signing wallet
+
+### Turnkey Authentication Issues
+
+- **Session token expired** - Log in again via Turnkey
+- **Invalid token** - Ensure you're using the latest session token from Turnkey
+- **Cookie not set** - Check browser cookie settings and domain configuration
+
+### API Key Issues
+
+- **Invalid API key** - Verify the key is correct and hasn't been deleted
+- **API key not found** - Set the environment variable or config file correctly
+- **Permission denied** - Ensure the API key has the required permissions
