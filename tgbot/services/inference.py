@@ -68,11 +68,26 @@ async def chat_completion_stream(
             # Make API call (non-streaming if tools might be called, streaming for final response)
             if tools and iteration < MAX_TOOL_ITERATIONS - 1:
                 # Non-streaming call to check for tool use
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    tools=tools,
-                )
+                try:
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        tools=tools,
+                    )
+                except Exception as tool_err:
+                    # Check if this is a "tool use not supported" error
+                    err_str = str(tool_err).lower()
+                    tool_unsupported = (
+                        "tool use" in err_str or
+                        "tool_use" in err_str or
+                        "function calling" in err_str or
+                        "no endpoints found" in err_str  # OpenRouter specific
+                    )
+                    if tool_unsupported:
+                        logger.warning(f"Model {model} doesn't support tools, retrying without: {tool_err}")
+                        tools = None  # Disable tools for this request
+                        continue  # Retry without tools
+                    raise  # Re-raise other errors
                 assistant_message = response.choices[0].message
 
                 # Check if model wants to call tools

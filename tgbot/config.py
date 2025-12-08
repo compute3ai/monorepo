@@ -12,7 +12,7 @@ WEBHOOK_PREFIX = os.getenv("WEBHOOK_PREFIX")  # e.g., https://api.compute3.ai/tg
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.compute3.ai")
 
 # Models
-DEFAULT_MODEL = os.getenv("DEFAULT_MODEL", "hermes4:70b")
+DEFAULT_MODEL = os.getenv("DEFAULT_MODEL")
 
 # MCP
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL")  # Optional MCP server
@@ -28,3 +28,5 @@ if not TELEGRAM_BOT_TOKEN:
     raise ValueError("TELEGRAM_BOT_TOKEN required")
 if not WEBHOOK_PREFIX:
     raise ValueError("WEBHOOK_PREFIX required")
+if not DEFAULT_MODEL:
+    raise ValueError("DEFAULT_MODEL required")
