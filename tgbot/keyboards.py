@@ -55,6 +55,13 @@ def new_context_keyboard_with_id(context_id: str) -> InlineKeyboardMarkup:
     ])
 
 
+def welcome_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard shown on welcome message."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🎁 Start for Free", callback_data="start_free")],
+    ])
+
+
 def obfuscate_key(api_key: str) -> str:
     """Obfuscate API key for display."""
     if not api_key:

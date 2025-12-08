@@ -31,6 +31,7 @@ class User(Base):
     model = Column(String, default=DEFAULT_MODEL)
     current_context_id = Column(String, default=generate_uuid)
     webhook_secret = Column(String, unique=True, default=generate_uuid)
+    free = Column(Integer, default=0)  # 0 = not free, 1 = free account used
     created_at = Column(DateTime, default=datetime.utcnow)
 
     messages = relationship("Message", back_populates="user", cascade="all, delete-orphan")
@@ -117,6 +118,15 @@ def clear_api_key(chat_id: int) -> None:
         user = session.query(User).filter(User.chat_id == chat_id).first()
         if user:
             user.api_key = None
+
+
+def set_free_account(chat_id: int, jwt_token: str) -> None:
+    """Set user's free account JWT token and mark as free account used."""
+    with get_session() as session:
+        user = session.query(User).filter(User.chat_id == chat_id).first()
+        if user:
+            user.api_key = jwt_token
+            user.free = 1
 
 
 def get_user_by_webhook_secret(webhook_secret: str) -> User | None:
@@ -211,6 +221,16 @@ def get_message_by_telegram_id(chat_id: int, message_id: int) -> Message | None:
         if msg:
             session.expunge(msg)
         return msg
+
+
+def get_last_user_message(chat_id: int) -> str | None:
+    """Get the last user message content (for language detection in webhooks)."""
+    with get_session() as session:
+        msg = session.query(Message).filter(
+            Message.chat_id == chat_id,
+            Message.role == "user"
+        ).order_by(Message.created_at.desc()).first()
+        return msg.content if msg else None
 
 
 def resume_context(chat_id: int, marker_context_id: str) -> str | None:

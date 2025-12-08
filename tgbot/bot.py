@@ -45,10 +45,12 @@ async def telegram_webhook(request):
     try:
         data = await request.json()
         update = Update.de_json(data, application.bot)
-        await application.process_update(update)
+        # Process update in background, don't block webhook response
+        asyncio.create_task(application.process_update(update))
     except Exception as e:
         logger.error(f"Error processing Telegram update: {e}")
 
+    # Return 200 immediately so Telegram doesn't retry
     return Response(status_code=200)
 
 

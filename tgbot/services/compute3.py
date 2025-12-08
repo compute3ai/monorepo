@@ -51,3 +51,29 @@ async def list_models(api_key: str) -> list[str]:
             return []
         except Exception:
             return []
+
+
+async def create_free_account() -> str | None:
+    """
+    Create a free guest account via /api/auth/free endpoint.
+    Returns JWT token if successful, None if failed.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            url = f"{API_BASE_URL}/api/auth/free"
+            logger.debug(f"Creating free account at {url}")
+            resp = await client.post(
+                url,
+                headers={"Content-Type": "application/json"},
+                timeout=10.0,
+            )
+            logger.debug(f"Free account creation response: {resp.status_code}")
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("token")
+            else:
+                logger.error(f"Free account creation failed with status {resp.status_code}: {resp.text}")
+            return None
+        except Exception as e:
+            logger.error(f"Free account creation error: {e}")
+            return None

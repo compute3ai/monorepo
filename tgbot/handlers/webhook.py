@@ -8,14 +8,14 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from telegram import Bot
 
-from db import get_user_by_webhook_secret
+from db import get_user_by_webhook_secret, get_last_user_message
 from services.mcp import call_mcp_tool
 from services.inference import chat_completion
 
 logger = logging.getLogger(__name__)
 
 
-async def generate_witty_caption(api_key: str, model: str, render_id: str, prompt: str | None) -> str:
+async def generate_witty_caption(api_key: str, model: str, render_id: str, prompt: str | None, user_last_message: str | None = None) -> str:
     """Generate a witty caption for a completed render using the LLM."""
     short_id = render_id[:8] if render_id else "unknown"
 
@@ -23,11 +23,20 @@ async def generate_witty_caption(api_key: str, model: str, render_id: str, promp
         return f"✨ Your render is ready! ({short_id})"
 
     try:
+        # Build system prompt with language detection
         system_msg = (
             "You are a witty assistant. Generate a SHORT, fun caption (1-2 sentences max) "
             "for an AI-generated image. Be playful and creative. Don't use hashtags. "
-            "Reference what was in the prompt."
+            "Reference what was in the prompt. "
         )
+
+        # Add language detection if we have the user's last message
+        if user_last_message:
+            system_msg += (
+                f"\n\nIMPORTANT: Detect the language from the user's last message and respond in that SAME language. "
+                f"User's last message: \"{user_last_message}\""
+            )
+
         user_msg = f"The user requested: \"{prompt}\"\n\nWrite a witty caption for the completed render."
 
         response = await chat_completion(api_key, model, f"{system_msg}\n\n{user_msg}")
@@ -108,10 +117,13 @@ async def handle_render_webhook(request: Request) -> JSONResponse:
             except Exception as e:
                 logger.warning(f"Failed to fetch render details: {e}")
 
+        # Get user's last message for language detection
+        user_last_message = get_last_user_message(chat_id)
+
         # Generate witty caption
         model = user.model or "hermes4:70b"
         if user.api_key and prompt:
-            caption = await generate_witty_caption(user.api_key, model, render_id, prompt)
+            caption = await generate_witty_caption(user.api_key, model, render_id, prompt, user_last_message)
         else:
             short_id = render_id[:8] if render_id else "unknown"
             caption = f"✨ Your render is ready! ({short_id})"

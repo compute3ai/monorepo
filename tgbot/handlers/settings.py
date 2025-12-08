@@ -5,8 +5,8 @@ Settings handlers - model selection and API key management.
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from db import get_user, get_or_create_user, set_api_key, set_model, set_context, new_context, add_message, get_message_by_telegram_id, resume_context, get_marker_telegram_id, DEFAULT_MODEL
-from services.compute3 import verify_api_key, list_models
+from db import get_user, get_or_create_user, set_api_key, set_model, set_context, new_context, add_message, get_message_by_telegram_id, resume_context, get_marker_telegram_id, set_free_account, DEFAULT_MODEL
+from services.compute3 import verify_api_key, list_models, create_free_account
 from keyboards import (
     settings_keyboard,
     model_picker_keyboard,
@@ -34,7 +34,10 @@ async def handle_settings_callback(update: Update, context: ContextTypes.DEFAULT
     chat_id = update.effective_chat.id
     data = query.data
 
-    if data == "settings":
+    if data == "start_free":
+        await handle_start_free(query, chat_id, context)
+
+    elif data == "settings":
         await show_settings(query, chat_id)
 
     elif data == "change_model":
@@ -112,7 +115,13 @@ async def show_settings(query, chat_id: int):
         return
 
     model = user.model or DEFAULT_MODEL
-    api_key_display = obfuscate_key(user.api_key)
+
+    # Detect if user has real API key or JWT
+    if user.api_key and user.api_key.startswith("c3_api_"):
+        api_key_display = obfuscate_key(user.api_key)
+    else:
+        # Either no key or it's a JWT (free account)
+        api_key_display = "No API Key set"
 
     await query.message.reply_text(
         f"⚙️ <b>Settings</b>\n\n"
@@ -192,4 +201,56 @@ async def handle_new_api_key(update: Update, context: ContextTypes.DEFAULT_TYPE)
     else:
         await update.message.reply_text(
             "❌ Invalid API key. Please try again or tap Cancel.",
+        )
+
+
+async def handle_start_free(query, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+    """Handle start_free callback - create free guest account."""
+    user = get_user(chat_id)
+
+    # Check if user already has an API key
+    if user and user.api_key:
+        await query.message.reply_text(
+            "✅ You already have an API key set!\n\n"
+            "Send me a message to start chatting.",
+            reply_markup=after_response_keyboard(),
+        )
+        return
+
+    # Check if user already used their free account
+    if user and user.free == 1:
+        await query.message.reply_text(
+            "❌ You've already used your free trial.\n\n"
+            "Please create an API key at https://console.compute3.ai to continue using the bot.",
+            disable_web_page_preview=True,
+        )
+        return
+
+    # Show loading message
+    await query.message.reply_text("🔄 Creating your free account...")
+
+    # Call /auth/free to get JWT token
+    jwt_token = await create_free_account()
+
+    if jwt_token:
+        # Store JWT and mark as free account used
+        set_free_account(chat_id, jwt_token)
+        context.user_data["awaiting_api_key"] = False
+
+        await query.message.reply_text(
+            "✅ <b>Free account activated!</b>\n\n"
+            "You can now chat with the bot for 30 days.\n\n"
+            "After 30 days, create an API key at https://console.compute3.ai to continue.\n\n"
+            "Send me a message to start chatting!",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=after_response_keyboard(),
+        )
+    else:
+        # Import here to avoid circular dependency
+        from keyboards import welcome_keyboard
+
+        await query.message.reply_text(
+            "❌ Failed to create free account. Please try again or enter your API key manually.",
+            reply_markup=welcome_keyboard(),
         )

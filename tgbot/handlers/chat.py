@@ -22,13 +22,19 @@ from keyboards import after_response_keyboard, new_context_keyboard_with_id
 from handlers.onboarding import handle_api_key_input, show_welcome
 
 # Minimum time between message edits (Telegram rate limit protection)
-MIN_EDIT_INTERVAL = 0.5
+MIN_EDIT_INTERVAL = 1.0
 
 
 def build_system_prompt(user) -> str:
     """Build system prompt with user-specific notify_url for renders."""
     notify_url = f"{WEBHOOK_PREFIX}/render/{user.webhook_secret}"
     return f"""You are a helpful AI assistant in a Telegram chat.
+
+CRITICAL TOOL USAGE RULES:
+1. Use each tool ONCE - do NOT call the same tool multiple times
+2. After using tools, provide a SUMMARY of what you did
+3. NEVER make redundant or duplicate tool calls
+4. If you've completed an action, summarize the results and STOP
 
 When creating renders (images/videos), ALWAYS include this notify_url parameter:
 notify_url: {notify_url}
@@ -101,30 +107,76 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Send typing indicator
     await update.message.chat.send_action("typing")
 
-    # Send placeholder message that we'll edit
-    response_msg = await update.message.reply_text("▌")
-
-    # Track last edit time for rate limiting
+    # Track last edit time and content for rate limiting
     last_edit_time = 0.0
+    last_sent_text = ""
+    response_msg = None
+    stream_start_time = time.time()
 
     async def on_stream_update(text: str):
         """Called when we have new text to display."""
-        nonlocal last_edit_time
+        nonlocal last_edit_time, last_sent_text, response_msg, stream_start_time
+
+        # Skip if text is only whitespace
+        if not text or text.strip() == "":
+            return
 
         now = time.time()
-        if now - last_edit_time < MIN_EDIT_INTERVAL:
-            return  # Skip this update to avoid rate limiting
+
+        # If no message sent yet, wait 1 second to accumulate content
+        if response_msg is None:
+            time_since_start = now - stream_start_time
+            if time_since_start < 1.0:
+                return  # Wait for 1 second of accumulation
+
+            # Send first message with accumulated content (or placeholder if no content yet)
+            if text.strip():
+                response_msg = await update.message.reply_text(text + " ▌")
+            else:
+                response_msg = await update.message.reply_text("... ⏳")
+            last_edit_time = now
+            last_sent_text = text
+            return
+
+        time_since_last = now - last_edit_time
+
+        # Check if text ends with punctuation
+        ends_with_punctuation = text.rstrip()[-1:] in ".!?,;:\n"
+
+        # Only update if:
+        # 1. At least 1 second has passed since last update
+        # 2. Text ends with punctuation (sentence boundary)
+        should_update = time_since_last >= MIN_EDIT_INTERVAL and ends_with_punctuation
+
+        if not should_update:
+            return  # Skip this update
 
         try:
             await response_msg.edit_text(text + " ▌")
             last_edit_time = now
-        except Exception:
-            pass  # Ignore edit errors (e.g., message unchanged)
+            last_sent_text = text
+        except Exception as e:
+            # Log edit errors for debugging (but continue)
+            import logging
+            logging.getLogger(__name__).warning(f"Message edit failed: {e}")
 
     # Stream the response with full conversation history
     final_response = await chat_completion_stream(
         user.api_key, model, messages, on_stream_update
     )
+
+    # If response was very fast and we never sent a message, send it now and we're done
+    if response_msg is None:
+        response_msg = await update.message.reply_text(final_response, reply_markup=after_response_keyboard())
+        # Store assistant response in DB
+        add_message(
+            chat_id=chat_id,
+            context_id=user.current_context_id,
+            role="assistant",
+            content=final_response,
+            message_id=response_msg.message_id,
+        )
+        return
 
     # Store assistant response in DB
     add_message(

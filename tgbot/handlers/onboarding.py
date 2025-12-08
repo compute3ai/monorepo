@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from db import get_or_create_user, set_api_key
 from services.compute3 import verify_api_key
-from keyboards import after_response_keyboard
+from keyboards import after_response_keyboard, welcome_keyboard
 
 WELCOME_MESSAGE = """👋 <b>Welcome to the Compute3 AI Bot!</b>
 
@@ -19,7 +19,9 @@ To use this bot, you'll need an API key. Don't have one? No worries - grab one f
 
 <b>The TL;DR:</b> We don't store your personal data or track you. Just don't use this for anything sketchy - be excellent to each other! 🤝
 
-Ready? Send me your API key to get started!"""
+Ready? Send me your API key to get started!
+
+<i>New users can chat with our bot for 30 days, afterwards setup your account to continue using the bot.</i>"""
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -30,12 +32,16 @@ async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def show_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show welcome message and prompt for API key."""
     chat_id = update.effective_chat.id
-    get_or_create_user(chat_id)  # Ensure user exists
+    user = get_or_create_user(chat_id)  # Ensure user exists
+
+    # Only show "Start for Free" button if user doesn't have an API key
+    keyboard = welcome_keyboard() if not user.api_key else None
 
     await update.message.reply_text(
         WELCOME_MESSAGE,
         parse_mode="HTML",
         disable_web_page_preview=True,
+        reply_markup=keyboard,
     )
     context.user_data["awaiting_api_key"] = True
 
