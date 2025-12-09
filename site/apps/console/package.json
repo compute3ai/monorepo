@@ -13,7 +13,7 @@
     "@compute3/shared-ui": "*",
     "@turnkey/react-wallet-kit": "^1.5.0",
     "marked": "^17.0.0",
-    "next": "16.0.1",
+    "next": "^16.0.7",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },
@@ -23,7 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.1",
+    "eslint-config-next": "^16.0.7",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }
