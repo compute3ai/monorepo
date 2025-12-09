@@ -31,8 +31,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         throw new Error("Please install MetaMask or another Ethereum wallet")
       }
 
+      // Get the actual provider (not the proxy)
+      // This resolves issues with Phantom's EthProviderProxy
+      let provider = window.ethereum
+
+      // If this is Phantom's proxy and Phantom is available, use Phantom directly
+      if (window.phantom?.ethereum) {
+        console.log("🦊 Using Phantom wallet provider")
+        provider = window.phantom.ethereum
+      }
+
       // Request account access
-      const accounts = (await window.ethereum.request({
+      const accounts = (await provider.request({
         method: "eth_requestAccounts",
       })) as string[]
 
@@ -41,20 +51,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
 
       // Check current network
-      const chainId = (await window.ethereum.request({ method: "eth_chainId" })) as string
+      const chainId = (await provider.request({ method: "eth_chainId" })) as string
       const baseMainnetChainIdHex = "0x2105" // 8453 in hex
 
       // Switch to Base mainnet if needed
       if (chainId !== baseMainnetChainIdHex) {
         try {
-          await window.ethereum.request({
+          await provider.request({
             method: "wallet_switchEthereumChain",
             params: [{ chainId: baseMainnetChainIdHex }],
           })
         } catch (switchError: any) {
           // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
-            await window.ethereum.request({
+            await provider.request({
               method: "wallet_addEthereumChain",
               params: [
                 {
@@ -76,34 +86,34 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Create wallet client with viem
+      // Create wallet client with viem using the actual provider (not proxy)
       const client = createWalletClient({
         account: accounts[0] as `0x${string}`,
         chain: base,
-        transport: custom(window.ethereum),
+        transport: custom(provider),
       })
 
       setWalletClient(client)
       setAddress(accounts[0])
 
-      // Listen for account changes
-      window.ethereum.on("accountsChanged", (newAccounts: any) => {
+      // Listen for account changes on the actual provider
+      provider.on("accountsChanged", (newAccounts: any) => {
         if (newAccounts.length === 0) {
           disconnectWallet()
         } else {
           setAddress(newAccounts[0])
-          // Update client with new account
+          // Update client with new account using the same provider
           const newClient = createWalletClient({
             account: newAccounts[0] as `0x${string}`,
             chain: base,
-            transport: custom(window.ethereum!),
+            transport: custom(provider),
           })
           setWalletClient(newClient)
         }
       })
 
-      // Listen for chain changes
-      window.ethereum.on("chainChanged", () => {
+      // Listen for chain changes on the actual provider
+      provider.on("chainChanged", () => {
         window.location.reload()
       })
     } catch (err: any) {

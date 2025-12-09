@@ -116,7 +116,11 @@ export function TopUpModal({ isOpen, onClose, userEmail, onSuccess }: TopUpModal
 
       // Handle validation errors from FastAPI
       let errorMessage = "Payment failed. Please try again."
-      if (err.response?.data?.detail) {
+
+      // Check if this is a wallet selection error from Phantom
+      if (err.message?.includes("selectExtension") || err.message?.includes("EthProviderProxy")) {
+        errorMessage = "Wallet error: Please disable Phantom wallet extension or use MetaMask only."
+      } else if (err.response?.data?.detail) {
         if (Array.isArray(err.response.data.detail)) {
           // FastAPI validation errors
           errorMessage = err.response.data.detail.map((e: any) => e.msg).join(", ")
@@ -224,6 +228,18 @@ export function TopUpModal({ isOpen, onClose, userEmail, onSuccess }: TopUpModal
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
+              {/* Wallet Notice */}
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <strong>Note:</strong> If you have both Phantom and MetaMask installed, please disable one of them to avoid payment errors.
+                  </div>
+                </div>
+              </div>
+
               {/* Payment Method Selection */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Payment Method</label>
