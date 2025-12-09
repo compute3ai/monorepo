@@ -14,8 +14,8 @@
     "@turnkey/react-wallet-kit": "^1.5.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "next": "^16.0.7",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-syntax-highlighter": "^16.0.0",
     "reveal.js": "^5.2.1"
   },
@@ -27,6 +27,7 @@
     "@types/reveal.js": "^5.2.1",
     "eslint": "^9",
     "eslint-config-next": "^16.0.7",
+    "null-loader": "^4.0.1",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }

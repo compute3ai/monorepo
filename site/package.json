@@ -15,5 +15,11 @@
   },
   "devDependencies": {
     "turbo": "^2.6.1"
+  },
+  "overrides": {
+    "viem": "2.39.0"
+  },
+  "resolutions": {
+    "viem": "2.39.0"
   }
 }
