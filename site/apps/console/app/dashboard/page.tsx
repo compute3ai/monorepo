@@ -7,6 +7,7 @@ import JobTransactionRow from "../../components/JobTransactionRow";
 import TopUpTransactionRow from "../../components/TopUpTransactionRow";
 import LLMTransactionRow from "../../components/LLMTransactionRow";
 import InvoiceTransactionRow from "../../components/InvoiceTransactionRow";
+import RenderTransactionRow from "../../components/RenderTransactionRow";
 
 interface UserProfile {
   user_id: string;
@@ -589,6 +590,15 @@ export default function DashboardPage() {
                       } else if (tx.transaction_type === 'invoice') {
                         return (
                           <InvoiceTransactionRow
+                            key={tx.id}
+                            tx={tx}
+                            isExpanded={expandedTxId === tx.id}
+                            onToggle={() => handleTransactionToggle(tx.id)}
+                          />
+                        );
+                      } else if (tx.transaction_type === 'render') {
+                        return (
+                          <RenderTransactionRow
                             key={tx.id}
                             tx={tx}
                             isExpanded={expandedTxId === tx.id}

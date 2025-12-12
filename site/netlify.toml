@@ -29,6 +29,9 @@
   # LLM API URL for chat completions
   NEXT_PUBLIC_LLM_API_URL = "https://api.compute3.ai/v1"
 
+  # Domain for GPU instance subdomains
+  NEXT_PUBLIC_DOMAIN = "compute3.ai"
+
   # Auth/API Backend
   NEXT_PUBLIC_AUTH_BACKEND = "https://api.compute3.ai/api"
   NEXT_PUBLIC_API_BASE = "https://api.compute3.ai/api"

@@ -565,7 +565,8 @@ export default function LaunchPage() {
         env_vars: Object.keys(envVarsObj).length > 0 ? envVarsObj : undefined,
         ports: Object.keys(portsObj).length > 0 ? portsObj : undefined,
         auth: httpsLbAuth,
-        runtime: runtime
+        runtime: runtime,
+        domain: process.env.NEXT_PUBLIC_DOMAIN,
       };
 
       if (containerSource === 'dockerfile' && dockerfile.trim()) {

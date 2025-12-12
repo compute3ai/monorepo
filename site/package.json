@@ -8,13 +8,30 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
+    "dev": "dotenv -e .env.local -- turbo run dev",
+    "build": "dotenv -e .env.local -- turbo run build",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules"
   },
+  "dependencies": {
+    "next": "^16.0.10",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "@turnkey/react-wallet-kit": "^1.5.0",
+    "marked": "^17.0.0"
+  },
   "devDependencies": {
-    "turbo": "^2.6.1"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "^16.0.10",
+    "null-loader": "^4.0.1",
+    "tailwindcss": "^4.1.17",
+    "turbo": "^2.6.1",
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "viem": "2.39.0"
