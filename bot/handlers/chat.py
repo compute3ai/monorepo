@@ -12,13 +12,14 @@ from db import (
     get_user,
     get_or_create_user,
     add_message,
-    get_context_messages,
+    get_thread_messages,
+    get_or_create_current_thread,
     update_message_by_telegram_id,
-    new_context,
+    new_thread,
     DEFAULT_MODEL,
 )
 from services.inference import chat_completion_stream
-from keyboards import after_response_keyboard, new_context_keyboard_with_id
+from keyboards import after_response_keyboard
 from handlers.onboarding import handle_api_key_input, show_welcome
 
 # Minimum time between message edits (Telegram rate limit protection)
@@ -89,20 +90,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     model = user.model or DEFAULT_MODEL
     telegram_message_id = update.message.message_id
 
+    # Get or create current thread
+    thread = get_or_create_current_thread(chat_id)
+
     # Store user message in DB
     add_message(
-        chat_id=chat_id,
-        context_id=user.current_context_id,
+        user_id=user.user_id,
+        thread_id=thread.id,
         role="user",
         content=message_text,
-        message_id=telegram_message_id,
+        telegram_message_id=telegram_message_id,
+        chat_id=chat_id,
     )
 
-    # Build messages for API call: system prompt + context history
+    # Build messages for API call: system prompt + thread history
     system_prompt = build_system_prompt(user)
-    context_messages = get_context_messages(chat_id, user.current_context_id)
+    thread_messages = get_thread_messages(thread.id)
 
-    messages = [{"role": "system", "content": system_prompt}] + context_messages
+    messages = [{"role": "system", "content": system_prompt}] + thread_messages
 
     # Send typing indicator
     await update.message.chat.send_action("typing")
@@ -162,7 +167,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Stream the response with full conversation history
     final_response = await chat_completion_stream(
-        user.api_key, model, messages, on_stream_update
+        user.api_key, model, messages, on_stream_update,
+        user_id=user.user_id,
+        thread_id=thread.id,
     )
 
     # If response was very fast and we never sent a message, send it now and we're done
@@ -170,21 +177,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response_msg = await update.message.reply_text(final_response, reply_markup=after_response_keyboard())
         # Store assistant response in DB
         add_message(
-            chat_id=chat_id,
-            context_id=user.current_context_id,
+            user_id=user.user_id,
+            thread_id=thread.id,
             role="assistant",
             content=final_response,
-            message_id=response_msg.message_id,
+            telegram_message_id=response_msg.message_id,
+            chat_id=chat_id,
         )
         return
 
     # Store assistant response in DB
     add_message(
-        chat_id=chat_id,
-        context_id=user.current_context_id,
+        user_id=user.user_id,
+        thread_id=thread.id,
         role="assistant",
         content=final_response,
-        message_id=response_msg.message_id,
+        telegram_message_id=response_msg.message_id,
+        chat_id=chat_id,
     )
 
     # Final edit with keyboard (remove cursor)
@@ -228,28 +237,18 @@ async def handle_edited_message(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def cmd_newcontext(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle /newcontext command - create new context."""
+    """Handle /newcontext or /new command - create new thread."""
     chat_id = update.effective_chat.id
 
     # Get or create user
     user = get_or_create_user(chat_id)
 
-    # Create new context
-    new_context_id = new_context(chat_id)
+    # Create new thread
+    thread = new_thread(chat_id)
 
-    # Send marker message with resume button
-    from handlers.settings import NEW_CONTEXT_MESSAGE, NEW_CONTEXT_MARKER
-    marker_msg = await update.message.reply_text(
-        NEW_CONTEXT_MESSAGE,
+    await update.message.reply_text(
+        "✨ <b>New conversation started!</b>\n\n"
+        "<i>Previous messages won't be included in this context.</i>",
         parse_mode="HTML",
-        reply_markup=new_context_keyboard_with_id(new_context_id),
-    )
-
-    # Store marker in DB
-    add_message(
-        chat_id=chat_id,
-        context_id=new_context_id,
-        role="context_marker",
-        content=NEW_CONTEXT_MARKER,
-        message_id=marker_msg.message_id,
+        reply_markup=after_response_keyboard(),
     )

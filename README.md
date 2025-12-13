@@ -13,7 +13,7 @@ Developer tools and resources for [Compute3](https://compute3.ai) - GPU orchestr
 
 | App | Description |
 |-----|-------------|
-| [**tgbot**](./tgbot) | Telegram bot for AI chat with MCP tool integration |
+| [**bot**](./bot) | AI chat bot with Telegram + REST API and MCP tool integration |
 
 ## 🐳 Docker Images
 

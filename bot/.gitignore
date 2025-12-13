@@ -1,0 +1,19 @@
+# Database
+*.db
+
+# Environment files
+.env
+.env.*
+!.env.sample
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp

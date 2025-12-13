@@ -1,5 +1,7 @@
 """
 Compute3 Telegram Bot - AI chat with MCP tools.
+
+This handles Telegram webhooks on PORT. REST API runs separately via api.py on API_PORT.
 """
 
 import logging
@@ -80,7 +82,7 @@ def create_app() -> Starlette:
 
     # Create Starlette app with routes
     routes = [
-        # Telegram webhook
+        # Telegram webhook (strip prefix removes /bot/tg, so this is just /webhook/...)
         Route(f"/webhook/{TELEGRAM_BOT_TOKEN}", telegram_webhook, methods=["POST"]),
         # Render completion webhook (user identified by their unique webhook_secret)
         Route("/render/{webhook_secret}", handle_render_webhook, methods=["POST"]),
@@ -93,7 +95,7 @@ def create_app() -> Starlette:
         await application.initialize()
         await application.start()
 
-        # Set webhook URL
+        # Set webhook URL (WEBHOOK_PREFIX is https://domain/bot/tg, we add /webhook/token)
         webhook_url = f"{WEBHOOK_PREFIX}/webhook/{TELEGRAM_BOT_TOKEN}"
         await application.bot.set_webhook(
             url=webhook_url,

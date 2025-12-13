@@ -9,3 +9,5 @@ build/
 .venv/
 venv/
 .env
+**/.env
+**/.env.prod

@@ -10,18 +10,23 @@ def after_response_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔄 New Context", callback_data="new_context"),
-            InlineKeyboardButton("⚙️ Settings", callback_data="settings"),
+            InlineKeyboardButton("☰ Menu", callback_data="menu"),
         ]
     ])
 
 
-def settings_keyboard() -> InlineKeyboardMarkup:
-    """Main settings keyboard."""
+def menu_keyboard() -> InlineKeyboardMarkup:
+    """Main menu keyboard."""
     return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🖼️ Renders", callback_data="renders")],
         [InlineKeyboardButton("🤖 Change Model", callback_data="change_model")],
         [InlineKeyboardButton("🔑 Change API Key", callback_data="change_api_key")],
         [InlineKeyboardButton("« Back", callback_data="back")],
     ])
+
+
+# Keep old name for backwards compatibility
+settings_keyboard = menu_keyboard
 
 
 def model_picker_keyboard(models: list[str], current_model: str) -> InlineKeyboardMarkup:
@@ -41,20 +46,6 @@ def cancel_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
-def new_context_keyboard() -> InlineKeyboardMarkup:
-    """Keyboard for #NewContext marker message (no context_id)."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Resume this context", callback_data="resume_context:")],
-    ])
-
-
-def new_context_keyboard_with_id(context_id: str) -> InlineKeyboardMarkup:
-    """Keyboard for #NewContext marker message with context_id for resume."""
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton("Resume this context", callback_data=f"resume_context:{context_id}")],
-    ])
-
-
 def welcome_keyboard() -> InlineKeyboardMarkup:
     """Keyboard shown on welcome message."""
     return InlineKeyboardMarkup([
@@ -69,3 +60,38 @@ def obfuscate_key(api_key: str) -> str:
     if len(api_key) <= 8:
         return "****"
     return f"{api_key[:4]}****{api_key[-4:]}"
+
+
+def renders_list_keyboard(renders: list, page: int = 0, page_size: int = 5) -> InlineKeyboardMarkup:
+    """Keyboard showing list of user renders."""
+    buttons = []
+
+    if not renders:
+        buttons.append([InlineKeyboardButton("No renders yet", callback_data="noop")])
+    else:
+        # Status emoji mapping
+        status_emoji = {
+            "pending": "⏳",
+            "success": "✅",
+            "failed": "❌",
+            "cancelled": "🚫",
+        }
+
+        for render in renders[:page_size]:
+            emoji = status_emoji.get(render.status, "❓")
+            # Show short render_id and template
+            short_id = render.render_id[:8] if render.render_id else "?"
+            template = render.template or "render"
+            label = f"{emoji} {template} ({short_id})"
+            buttons.append([InlineKeyboardButton(label, callback_data=f"render:{render.render_id}")])
+
+    buttons.append([InlineKeyboardButton("« Back to Menu", callback_data="menu")])
+    return InlineKeyboardMarkup(buttons)
+
+
+def render_detail_keyboard(render_id: str) -> InlineKeyboardMarkup:
+    """Keyboard for render detail view."""
+    return InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔄 Refresh Status", callback_data=f"render_refresh:{render_id}")],
+        [InlineKeyboardButton("« Back to Renders", callback_data="renders")],
+    ])

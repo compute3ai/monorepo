@@ -4,12 +4,56 @@ Inference service - OpenAI-compatible chat completions with streaming and MCP to
 
 import json
 import logging
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, Optional
 from openai import AsyncOpenAI
 from config import API_BASE_URL
 from services.mcp import get_mcp_tools, call_mcp_tool
+from renders import create_render
 
 logger = logging.getLogger(__name__)
+
+
+def _track_render_creation(
+    user_id: Optional[str],
+    thread_id: Optional[str],
+    tool_name: str,
+    arguments: dict,
+    result: str,
+) -> None:
+    """Track render creation in the database when create_render tool is called."""
+    if tool_name != "create_render":
+        return
+    if not user_id or not thread_id:
+        logger.warning("Cannot track render: missing user_id or thread_id")
+        return
+
+    try:
+        # Parse result to get render_id
+        result_data = json.loads(result)
+        render_id = result_data.get("id") or result_data.get("render_id")
+        if not render_id:
+            logger.warning(f"No render_id in result: {result}")
+            return
+
+        # Extract prompt and template from arguments
+        params = arguments.get("params", {})
+        prompt = params.get("prompt")
+        template = params.get("template")
+
+        # Create render tracking record
+        create_render(
+            user_id=user_id,
+            thread_id=thread_id,
+            render_id=render_id,
+            prompt=prompt,
+            template=template,
+        )
+        logger.info(f"Tracked render creation: {render_id} for user {user_id}")
+
+    except json.JSONDecodeError:
+        logger.warning(f"Failed to parse tool result as JSON: {result}")
+    except Exception as e:
+        logger.error(f"Failed to track render creation: {e}")
 
 # Punctuation that triggers a flush
 FLUSH_CHARS = {'.', ',', ':', ';', '!', '?', '*', '\n'}
@@ -21,6 +65,8 @@ async def chat_completion_stream(
     messages: list[dict],
     on_update: Callable[[str], Awaitable[None]],
     use_tools: bool = True,
+    user_id: Optional[str] = None,
+    thread_id: Optional[str] = None,
 ) -> str:
     """
     Stream chat completion with punctuation-based updates and MCP tool support.
@@ -31,6 +77,8 @@ async def chat_completion_stream(
         messages: Conversation history as list of {"role": "user/assistant", "content": "..."}
         on_update: Async callback called with accumulated text on each flush
         use_tools: Whether to enable MCP tools (default: True)
+        user_id: User ID for tracking render creation
+        thread_id: Thread ID for tracking render creation
 
     Returns:
         Final complete response text.
@@ -150,6 +198,9 @@ async def chat_completion_stream(
 
                 logger.info(f"Calling MCP tool: {tool_name} with {arguments}")
                 result = await call_mcp_tool(api_key, tool_name, arguments)
+
+                # Track render creation if applicable
+                _track_render_creation(user_id, thread_id, tool_name, arguments, result)
 
                 # Add tool result to messages
                 messages.append({

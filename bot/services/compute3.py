@@ -35,7 +35,7 @@ async def verify_api_key(api_key: str) -> dict | None:
 async def list_models(api_key: str) -> list[str]:
     """
     Fetch available models from /v1/models endpoint.
-    Returns list of model IDs.
+    Returns list of model IDs (excludes embedding models).
     """
     async with httpx.AsyncClient() as client:
         try:
@@ -47,7 +47,11 @@ async def list_models(api_key: str) -> list[str]:
             if resp.status_code == 200:
                 data = resp.json()
                 # OpenAI-compatible format: {"data": [{"id": "model-name", ...}]}
-                return [m["id"] for m in data.get("data", [])]
+                # Filter out embedding models
+                return [
+                    m["id"] for m in data.get("data", [])
+                    if "embed" not in m["id"].lower()
+                ]
             return []
         except Exception:
             return []

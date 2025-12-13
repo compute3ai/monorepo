@@ -9,12 +9,26 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Use DATABASE_URL from environment, fallback to ini file
-database_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+# Build DATABASE_URL from individual components (same logic as db.py)
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_SSLMODE = os.getenv("DB_SSLMODE", "require")
+
+if DB_HOST and DB_USER and DB_PASSWORD and DB_NAME:
+    database_url = f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT or '5432'}/{DB_NAME}?sslmode={DB_SSLMODE}"
+else:
+    database_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url"))
+
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

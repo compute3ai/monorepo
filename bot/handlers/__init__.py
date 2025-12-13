@@ -1,6 +1,6 @@
 from .onboarding import cmd_start, handle_api_key_input, show_welcome
 from .chat import handle_message
-from .settings import handle_settings_callback, NEW_CONTEXT_MARKER
+from .settings import handle_settings_callback
 
 __all__ = [
     "cmd_start",
@@ -8,5 +8,4 @@ __all__ = [
     "show_welcome",
     "handle_message",
     "handle_settings_callback",
-    "NEW_CONTEXT_MARKER",
 ]
