@@ -116,3 +116,101 @@ class Renders:
         """Get render status (lightweight polling endpoint)"""
         data = self._http.get(f"/api/renders/{render_id}/status")
         return RenderStatus.from_dict(data)
+
+    # =========================================================================
+    # Flow endpoints - simplified interfaces
+    # =========================================================================
+
+    def text_to_image(self, prompt: str) -> Render:
+        """Generate an image using Qwen-Image (great for text in images).
+
+        Args:
+            prompt: Text description of the image
+
+        Example:
+            render = c3.renders.text_to_image("a cat wearing sunglasses")
+        """
+        data = self._http.post("/api/flow/text-to-image", json={"prompt": prompt})
+        return Render.from_dict(data)
+
+    def text_to_image_hidream(self, prompt: str) -> Render:
+        """Generate an image using HiDream I1 Full (highest quality).
+
+        Args:
+            prompt: Text description of the image
+
+        Example:
+            render = c3.renders.text_to_image_hidream("a mystical forest")
+        """
+        data = self._http.post("/api/flow/text-to-image-hidream", json={"prompt": prompt})
+        return Render.from_dict(data)
+
+    def text_to_video(self, prompt: str) -> Render:
+        """Generate a video using Wan 2.2 14B.
+
+        Args:
+            prompt: Text description of the video
+
+        Example:
+            render = c3.renders.text_to_video("a cat walking through a garden")
+        """
+        data = self._http.post("/api/flow/text-to-video", json={"prompt": prompt})
+        return Render.from_dict(data)
+
+    def image_to_video(self, prompt: str, image_url: str) -> Render:
+        """Animate an image using Wan 2.2 Animate.
+
+        Args:
+            prompt: Description of the motion/animation
+            image_url: URL of the image to animate
+
+        Example:
+            render = c3.renders.image_to_video("dancing", "https://example.com/img.png")
+        """
+        data = self._http.post(
+            "/api/flow/image-to-video",
+            json={"prompt": prompt, "image_url": image_url}
+        )
+        return Render.from_dict(data)
+
+    def speaking_video(self, prompt: str, image_url: str, audio_url: str) -> Render:
+        """Generate a lip-sync video using HuMo.
+
+        Args:
+            prompt: Description of the scene/character
+            image_url: URL of the face/character image
+            audio_url: URL of the audio/speech file
+
+        Example:
+            render = c3.renders.speaking_video(
+                "A person talking to camera",
+                "https://example.com/face.png",
+                "https://example.com/speech.mp3"
+            )
+        """
+        data = self._http.post(
+            "/api/flow/speaking-video",
+            json={"prompt": prompt, "image_url": image_url, "audio_url": audio_url}
+        )
+        return Render.from_dict(data)
+
+    def speaking_video_wan(self, prompt: str, image_url: str, audio_url: str) -> Render:
+        """Generate an audio-driven video using Wan 2.2 S2V.
+
+        Args:
+            prompt: Description of the scene/action
+            image_url: URL of the image
+            audio_url: URL of the audio file
+
+        Example:
+            render = c3.renders.speaking_video_wan(
+                "The person is singing",
+                "https://example.com/face.png",
+                "https://example.com/song.mp3"
+            )
+        """
+        data = self._http.post(
+            "/api/flow/speaking-video-wan",
+            json={"prompt": prompt, "image_url": image_url, "audio_url": audio_url}
+        )
+        return Render.from_dict(data)
