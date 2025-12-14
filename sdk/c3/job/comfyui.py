@@ -10,6 +10,7 @@ import httpx
 from .base import BaseJob
 from ..config import COMFYUI_IMAGE
 
+
 if TYPE_CHECKING:
     from ..client import C3
 
@@ -737,25 +738,40 @@ class ComfyUIJob(BaseJob):
                 resp.raise_for_status()
                 return resp.json().get("name", filename)
 
-    def queue_prompt(self, workflow: dict) -> str:
-        """Submit workflow to ComfyUI, returns prompt_id"""
-        with httpx.Client(timeout=30) as client:
-            resp = client.post(
-                f"{self.base_url}/prompt",
-                json={"prompt": workflow},
-                headers=self.auth_headers,
-            )
-            if resp.status_code != 200:
-                # Include response body in error for debugging
-                try:
-                    error_detail = resp.json()
-                except Exception:
-                    error_detail = resp.text
-                raise RuntimeError(f"ComfyUI prompt failed ({resp.status_code}): {error_detail}")
-            return resp.json()["prompt_id"]
+    def queue_prompt(self, workflow: dict, retries: int = 5) -> str:
+        """Submit workflow to ComfyUI, returns prompt_id.
 
-    def get_history(self, prompt_id: str, retries: int = 3) -> dict | None:
-        """Get execution history for a prompt"""
+        Retries on connection errors including DNS failures.
+        """
+        last_error = None
+        for attempt in range(retries):
+            try:
+                with httpx.Client(timeout=30) as client:
+                    resp = client.post(
+                        f"{self.base_url}/prompt",
+                        json={"prompt": workflow},
+                        headers=self.auth_headers,
+                    )
+                    if resp.status_code != 200:
+                        # Include response body in error for debugging
+                        try:
+                            error_detail = resp.json()
+                        except Exception:
+                            error_detail = resp.text
+                        raise RuntimeError(f"ComfyUI prompt failed ({resp.status_code}): {error_detail}")
+                    return resp.json()["prompt_id"]
+            except (httpx.ConnectError, httpx.ReadTimeout) as e:
+                last_error = e
+                if attempt < retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                    continue
+                raise
+
+    def get_history(self, prompt_id: str, retries: int = 5) -> dict | None:
+        """Get execution history for a prompt.
+
+        Retries on connection errors including DNS failures.
+        """
         last_error = None
         for attempt in range(retries):
             try:
@@ -770,7 +786,7 @@ class ComfyUIJob(BaseJob):
             except (httpx.ConnectError, httpx.ReadTimeout) as e:
                 last_error = e
                 if attempt < retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+                    time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s, 8s
                     continue
                 raise
 
@@ -780,7 +796,7 @@ class ComfyUIJob(BaseJob):
         """Wait for prompt execution to complete, returns history entry"""
         start = time.time()
         consecutive_errors = 0
-        max_consecutive_errors = 5
+        max_consecutive_errors = 10  # Handle DNS propagation delays
 
         while time.time() - start < timeout:
             try:
@@ -806,7 +822,7 @@ class ComfyUIJob(BaseJob):
         raise TimeoutError(f"Workflow did not complete within {timeout}s")
 
     def download_output(
-        self, filename: str, output_dir: str | Path = ".", subfolder: str = "", retries: int = 3
+        self, filename: str, output_dir: str | Path = ".", subfolder: str = "", retries: int = 5
     ) -> Path:
         """Download output file from ComfyUI server.
 
