@@ -20,7 +20,14 @@ from frontends.web.state import active_streams
 from services import chats, users
 from core import stream_completion
 from core.prompts import build_system_prompt
-from config import DEFAULT_MODEL
+from config import DEFAULT_MODEL, API_BASE_URL, URL_PREFIX
+
+
+def get_notify_url(webhook_secret: str) -> str | None:
+    """Construct the render notification webhook URL for a user."""
+    if not API_BASE_URL:
+        return None
+    return f"{API_BASE_URL}{URL_PREFIX}/api/render/{webhook_secret}"
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +84,7 @@ async def run_inference(
     model: str,
     messages: list[dict],
     require_confirmation: bool = True,
+    notify_url: str | None = None,
 ):
     """
     Run inference in background and update message status.
@@ -85,6 +93,7 @@ async def run_inference(
     Args:
         require_confirmation: If True, tools in TOOLS_REQUIRING_CONFIRMATION
             will create selection messages for user confirmation.
+        notify_url: Webhook URL for render completion notifications.
     """
     import json as json_module
 
@@ -108,6 +117,7 @@ async def run_inference(
             user_id=user_id,
             chat_id=chat_id,
             require_confirmation=require_confirmation,
+            notify_url=notify_url,
         ):
             if event.type == "token":
                 final_content = event.content
@@ -351,6 +361,7 @@ async def send_message(
             messages.append({"role": m["role"], "content": m["content"]})
 
     # Start inference in background
+    notify_url = get_notify_url(user.webhook_secret)
     background_tasks.add_task(
         run_inference,
         user_id=user_id,
@@ -359,6 +370,7 @@ async def send_message(
         api_key=user.api_key,
         model=user.model or DEFAULT_MODEL,
         messages=messages,
+        notify_url=notify_url,
     )
 
     return SendMessageResponse(
@@ -446,6 +458,8 @@ async def respond_to_selection(
         if not user or not user.api_key:
             raise HTTPException(status_code=400, detail="User has no API key configured")
 
+        notify_url = get_notify_url(user.webhook_secret)
+
         # Execute the tool in background
         async def run_tool_and_notify():
             tool_name = tool_call.get("name")
@@ -457,6 +471,7 @@ async def respond_to_selection(
                 tool_args=tool_args,
                 user_id=user_id,
                 chat_id=chat_id,
+                notify_url=notify_url,
             ):
                 if event.type == "tool_result":
                     # Store result as assistant message

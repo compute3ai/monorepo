@@ -20,7 +20,7 @@ from starlette.routing import Route
 from starlette.responses import Response
 import uvicorn
 
-from config import TELEGRAM_BOT_TOKEN, WEBHOOK_PREFIX
+from config import TELEGRAM_BOT_TOKEN, API_BASE_URL, URL_PREFIX
 from .handlers import cmd_start, cmd_newcontext, handle_message, handle_callback
 from .webhook import handle_render_webhook
 
@@ -57,7 +57,8 @@ async def health_check(request):
 def create_app() -> Starlette:
     """Create the Starlette application with all routes."""
     logger.info("Starting Compute3 Telegram Agent")
-    logger.info(f"Webhook URL: {WEBHOOK_PREFIX}")
+    logger.info(f"API base URL: {API_BASE_URL}")
+    logger.info(f"URL prefix: {URL_PREFIX}")
 
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -73,16 +74,16 @@ def create_app() -> Starlette:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     routes = [
-        Route(f"/webhook/{TELEGRAM_BOT_TOKEN}", telegram_webhook, methods=["POST"]),
-        Route("/render/{webhook_secret}", handle_render_webhook, methods=["POST"]),
-        Route("/health", health_check, methods=["GET"]),
+        Route(f"{URL_PREFIX}/tg/webhook/{TELEGRAM_BOT_TOKEN}", telegram_webhook, methods=["POST"]),
+        Route(f"{URL_PREFIX}/tg/render/{{webhook_secret}}", handle_render_webhook, methods=["POST"]),
+        Route(f"{URL_PREFIX}/tg/health", health_check, methods=["GET"]),
     ]
 
     async def on_startup():
         await application.initialize()
         await application.start()
 
-        webhook_url = f"{WEBHOOK_PREFIX}/webhook/{TELEGRAM_BOT_TOKEN}"
+        webhook_url = f"{API_BASE_URL}{URL_PREFIX}/tg/webhook/{TELEGRAM_BOT_TOKEN}"
         await application.bot.set_webhook(url=webhook_url, allowed_updates=Update.ALL_TYPES)
         logger.info(f"Webhook set to: {webhook_url}")
 

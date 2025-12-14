@@ -6,11 +6,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
 from frontends.web.dependencies import require_api_key
-from services import renders, users
+from services import renders
 
 router = APIRouter(prefix="/renders", tags=["renders"])
 
@@ -148,45 +146,3 @@ async def get_render(
     )
 
 
-# =============================================================================
-# Webhook endpoint (no auth - uses webhook_secret in path)
-# =============================================================================
-
-
-@router.post("/webhook/{webhook_secret}")
-async def render_webhook(request: Request, webhook_secret: str):
-    """
-    Handle render completion webhook.
-
-    Called by the render service when a render completes.
-
-    Payload:
-    {
-        "id": "render-uuid",
-        "status": "success" | "failed",
-        "result_url": "https://...",  # if success
-        "error": "...",  # if failed
-    }
-    """
-    # Look up user by webhook secret
-    user = users.get_user_by_webhook_secret(webhook_secret)
-    if not user:
-        return JSONResponse({"error": "Invalid webhook secret"}, status_code=403)
-
-    try:
-        payload = await request.json()
-    except Exception:
-        return JSONResponse({"error": "Invalid JSON"}, status_code=400)
-
-    render_id = payload.get("id", "unknown")
-    status = payload.get("status")
-    result_url = payload.get("result_url")
-    error = payload.get("error")
-
-    # Update render status
-    renders.update_render_status(render_id, status, result_url, error)
-
-    # Add notification for polling clients
-    renders.add_render_notification(user.user_id, render_id, status, result_url, error)
-
-    return {"status": "ok"}

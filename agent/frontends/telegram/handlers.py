@@ -7,12 +7,17 @@ import re
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import DEFAULT_MODEL
+from config import DEFAULT_MODEL, API_BASE_URL, URL_PREFIX
 from services import users, chats
 from core import stream_completion
 from core.prompts import build_system_prompt
 from .output import TelegramOutput
 from .keyboards import after_response_keyboard, welcome_keyboard
+
+
+def get_notify_url(webhook_secret: str) -> str:
+    """Construct the render notification webhook URL for a user."""
+    return f"{API_BASE_URL}{URL_PREFIX}/tg/render/{webhook_secret}"
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +123,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Stream response
     model = user.model or DEFAULT_MODEL
+    notify_url = get_notify_url(user.webhook_secret)
     final_response = ""
 
     async for event in stream_completion(
@@ -126,6 +132,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         messages=messages,
         user_id=user.user_id,
         chat_id=chat.id,
+        notify_url=notify_url,
     ):
         if event.type == "token":
             await output.on_token(event.content)
@@ -197,6 +204,7 @@ async def handle_edited_message(update: Update, context: ContextTypes.DEFAULT_TY
     output = TelegramOutput(send_msg, edit_msg)
 
     model = user.model or DEFAULT_MODEL
+    notify_url = get_notify_url(user.webhook_secret)
     final_response = ""
 
     async for event in stream_completion(
@@ -205,6 +213,7 @@ async def handle_edited_message(update: Update, context: ContextTypes.DEFAULT_TY
         messages=messages,
         user_id=user.user_id,
         chat_id=chat.id,
+        notify_url=notify_url,
     ):
         if event.type == "token":
             await output.on_token(event.content)

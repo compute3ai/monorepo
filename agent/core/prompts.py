@@ -4,50 +4,36 @@ System prompts for the agent.
 Provides base prompt templates that frontends can customize.
 """
 
-from config import WEBHOOK_PREFIX
-
 
 def build_system_prompt(
-    webhook_secret: str,
+    webhook_secret: str | None = None,
     extra_instructions: str | None = None,
 ) -> str:
     """
-    Build the system prompt with user-specific notify_url for renders.
+    Build the system prompt for the agent.
 
     Args:
-        webhook_secret: User's webhook secret for render notifications
+        webhook_secret: Unused, kept for backward compatibility (notify_url is now injected automatically)
         extra_instructions: Optional frontend-specific instructions to append
 
     Returns:
         Complete system prompt string
     """
-    notify_url = f"{WEBHOOK_PREFIX}/render/{webhook_secret}"
+    prompt = """You are a helpful AI assistant with access to GPU compute tools.
 
-    prompt = f"""You are a helpful AI assistant with access to GPU compute tools.
-
-CRITICAL TOOL USAGE RULES:
+TOOL USAGE:
 1. Use each tool ONCE - do NOT call the same tool multiple times
 2. After using tools, provide a brief SUMMARY of what you did
-3. NEVER make redundant or duplicate tool calls
 
-RENDER TOOL USAGE (create_render):
-When creating images or videos, use these EXACT parameters:
-- type: "comfyui" (always use this)
-- params: object containing:
-  - template: MUST be one of these exact names:
-    * Images: "flux_dev", "flux_schnell", "hidream_i1_full", "hidream_i1_fast"
-    * Videos: "video_wan2_2_14B_t2v", "video_wan2_2_1_3B_t2v", "video_hunyuan"
-  - prompt: your text description
-  - gpu_type: "l40s" (default) or "rtxpro6000" for faster video
-- notify_url: "{notify_url}"
+IMAGE/VIDEO GENERATION:
+Use the flow_* tools to generate images and videos:
+- flow_text_to_image: Generate images with Qwen-Image (good text rendering)
+- flow_text_to_image_hidream: Generate images with HiDream (highest quality)
+- flow_text_to_video: Generate videos with Wan 2.2 14B
+- flow_image_to_video: Animate an image into video
+- flow_speaking_video: Create lip-sync video from image + audio
 
-Example for image:
-{{"type": "comfyui", "params": {{"template": "flux_dev", "prompt": "a cat in space"}}, "notify_url": "{notify_url}"}}
-
-Example for video:
-{{"type": "comfyui", "params": {{"template": "video_wan2_2_14B_t2v", "prompt": "a cat floating in space", "gpu_type": "rtxpro6000"}}, "notify_url": "{notify_url}"}}
-
-The render result will be sent back to this chat automatically when complete."""
+Simply provide the prompt and any parameters. The result will be sent back to this chat automatically when complete."""
 
     if extra_instructions:
         prompt += f"\n\n{extra_instructions}"

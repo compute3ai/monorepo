@@ -3,7 +3,7 @@ MCP (Model Context Protocol) client service for tool integration.
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 from fastmcp.client import Client, StreamableHttpTransport
 
 from config import API_BASE_URL
@@ -11,6 +11,16 @@ from config import API_BASE_URL
 logger = logging.getLogger(__name__)
 
 MCP_URL = f"{API_BASE_URL}/mcp"
+
+# Flow tools that should have notify_url injected automatically
+FLOW_RENDER_TOOLS = {
+    "flow_text_to_image",
+    "flow_text_to_image_hidream",
+    "flow_text_to_video",
+    "flow_image_to_video",
+    "flow_speaking_video",
+    "flow_speaking_video_wan",
+}
 
 # Tools cache (global - same for all users, cached forever, restart bot to refresh)
 _tools_cache: list[dict] | None = None
@@ -81,10 +91,24 @@ async def get_mcp_tools(api_key: str | None = None) -> list[dict]:
         return []
 
 
-async def call_mcp_tool(api_key: str, tool_name: str, arguments: dict[str, Any]) -> str:
+async def call_mcp_tool(
+    api_key: str,
+    tool_name: str,
+    arguments: dict[str, Any],
+    notify_url: Optional[str] = None,
+) -> str:
     """
     Call an MCP tool and return the result.
+
+    For flow_* render tools, automatically injects notify_url if provided.
+    This ensures render completion webhooks are sent to the agent.
     """
+    # Inject notify_url for flow render tools
+    if tool_name in FLOW_RENDER_TOOLS and notify_url:
+        arguments = arguments.copy()
+        arguments["notify_url"] = notify_url
+        logger.info(f"Injected notify_url for {tool_name}")
+
     transport = StreamableHttpTransport(MCP_URL, auth=api_key)
     client = Client(transport)
 

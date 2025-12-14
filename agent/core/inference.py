@@ -123,6 +123,7 @@ async def stream_completion(
     user_id: Optional[str] = None,
     chat_id: Optional[str] = None,
     require_confirmation: bool = False,
+    notify_url: Optional[str] = None,
 ) -> AsyncIterator[StreamEvent]:
     """
     Stream chat completion, yielding events for each token and tool call.
@@ -139,6 +140,7 @@ async def stream_completion(
         chat_id: Chat ID for tracking
         require_confirmation: If True, tools in TOOLS_REQUIRING_CONFIRMATION
             will emit tool_confirmation events instead of executing immediately
+        notify_url: Webhook URL for render completion notifications (injected into flow_* tools)
 
     Yields:
         StreamEvent objects with type:
@@ -284,7 +286,7 @@ async def stream_completion(
 
             # Execute tools that don't need confirmation
             for tool_call, tool_name, arguments in tools_to_execute:
-                result = await call_mcp_tool(api_key, tool_name, arguments)
+                result = await call_mcp_tool(api_key, tool_name, arguments, notify_url=notify_url)
                 _track_render_creation(user_id, chat_id, tool_name, arguments, result)
 
                 yield StreamEvent(
@@ -333,6 +335,7 @@ async def execute_confirmed_tool(
     tool_args: dict,
     user_id: Optional[str] = None,
     chat_id: Optional[str] = None,
+    notify_url: Optional[str] = None,
 ) -> AsyncIterator[StreamEvent]:
     """
     Execute a tool that was confirmed by the user.
@@ -346,12 +349,13 @@ async def execute_confirmed_tool(
         tool_args: Arguments for the tool
         user_id: User ID for tracking
         chat_id: Chat ID for tracking
+        notify_url: Webhook URL for render completion notifications
 
     Yields:
         StreamEvent with tool_result type
     """
     try:
-        result = await call_mcp_tool(api_key, tool_name, tool_args)
+        result = await call_mcp_tool(api_key, tool_name, tool_args, notify_url=notify_url)
         _track_render_creation(user_id, chat_id, tool_name, tool_args, result)
 
         yield StreamEvent(
