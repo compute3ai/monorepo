@@ -112,7 +112,9 @@ class Jobs:
         """List all jobs"""
         params = {"state": state} if state else None
         data = self._http.get("/api/jobs", params=params)
-        return [Job.from_dict(j) for j in data]
+        # API returns {"jobs": [...], "total_count": ...}
+        jobs = data.get("jobs", []) if isinstance(data, dict) else data
+        return [Job.from_dict(j) for j in jobs]
 
     def get(self, job_id: str) -> Job:
         """Get job details"""

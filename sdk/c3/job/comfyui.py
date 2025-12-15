@@ -239,12 +239,13 @@ def apply_params(workflow: dict, **params) -> dict:
     Supported params:
         prompt: Text for positive prompt (CLIPTextEncode with "Positive" in title)
         negative: Text for negative prompt (CLIPTextEncode with "Negative" in title)
-        width: Image width (EmptySD3LatentImage, EmptyFlux2LatentImage, EmptyLatentImage, or PrimitiveNode)
-        height: Image height (same as width)
-        seed: Random seed (KSampler, RandomNoise, or SamplerCustom)
+        width: Image/video width (EmptySD3LatentImage, EmptyHunyuanLatentVideo, etc.)
+        height: Image/video height (same as width)
+        length: Video length in frames (EmptyHunyuanLatentVideo, etc.)
+        seed: Random seed (KSampler uses "seed", KSamplerAdvanced uses "noise_seed")
         steps: Sampling steps (KSampler or Flux2Scheduler)
         cfg: CFG scale (KSampler or FluxGuidance)
-        filename_prefix: Output filename prefix (SaveImage)
+        filename_prefix: Output filename prefix (SaveImage, SaveVideo)
 
     Returns:
         Modified workflow (mutated in place)
@@ -279,8 +280,8 @@ def apply_params(workflow: dict, **params) -> dict:
         if node:
             node["inputs"]["text"] = params["negative"]
 
-    # Width/Height - try various latent image/video nodes
-    if "width" in params or "height" in params:
+    # Width/Height/Length - try various latent image/video nodes
+    if "width" in params or "height" in params or "length" in params:
         latent_types = [
             # Image
             "EmptySD3LatentImage", "EmptyFlux2LatentImage", "EmptyLatentImage",
@@ -293,6 +294,8 @@ def apply_params(workflow: dict, **params) -> dict:
                 node["inputs"]["width"] = params["width"]
             if "height" in params:
                 node["inputs"]["height"] = params["height"]
+            if "length" in params:
+                node["inputs"]["length"] = params["length"]
         else:
             # Try PrimitiveNode with "width"/"height" title (Flux2 style)
             if "width" in params:
@@ -308,14 +311,31 @@ def apply_params(workflow: dict, **params) -> dict:
     sampler_types = ["KSampler", "KSamplerAdvanced", "SamplerCustom", "SamplerCustomAdvanced"]
 
     # Seed - KSampler variants or RandomNoise
+    # Note: KSampler uses "seed", KSamplerAdvanced uses "noise_seed"
     if "seed" in params:
-        node_id, node = find_first(sampler_types)
+        # Try KSampler first (uses "seed")
+        node_id, node = find_node(workflow, "KSampler")
         if node:
             node["inputs"]["seed"] = params["seed"]
         else:
-            node_id, node = find_node(workflow, "RandomNoise")
-            if node:
-                node["inputs"]["noise_seed"] = params["seed"]
+            # Try KSamplerAdvanced (uses "noise_seed")
+            # For multi-stage workflows, find the one with add_noise="enable" (the one that actually uses seed)
+            advanced_nodes = find_nodes(workflow, "KSamplerAdvanced")
+            target_node = None
+            for nid, n in advanced_nodes:
+                if n["inputs"].get("add_noise") == "enable":
+                    target_node = n
+                    break
+            # Fallback to first KSamplerAdvanced if none have add_noise="enable"
+            if not target_node and advanced_nodes:
+                target_node = advanced_nodes[0][1]
+            if target_node:
+                target_node["inputs"]["noise_seed"] = params["seed"]
+            else:
+                # Try other sampler types
+                node_id, node = find_node(workflow, "RandomNoise")
+                if node:
+                    node["inputs"]["noise_seed"] = params["seed"]
 
     # Steps - KSampler variants or Flux2Scheduler
     if "steps" in params:

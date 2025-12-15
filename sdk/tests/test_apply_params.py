@@ -152,13 +152,26 @@ class TestApplyParamsUnit:
         assert workflow["3"]["inputs"]["cfg"] == 5.0
 
     def test_ksampler_advanced_params(self):
+        # KSamplerAdvanced uses noise_seed, not seed
         workflow = {
-            "10": {"class_type": "KSamplerAdvanced", "inputs": {"seed": 0, "steps": 20, "cfg": 7.0}, "_meta": {}},
+            "10": {"class_type": "KSamplerAdvanced", "inputs": {"noise_seed": 0, "steps": 20, "cfg": 7.0, "add_noise": "enable"}, "_meta": {}},
         }
         apply_params(workflow, seed=12345, steps=30, cfg=5.0)
-        assert workflow["10"]["inputs"]["seed"] == 12345
+        assert workflow["10"]["inputs"]["noise_seed"] == 12345
         assert workflow["10"]["inputs"]["steps"] == 30
         assert workflow["10"]["inputs"]["cfg"] == 5.0
+
+    def test_ksampler_advanced_multistage(self):
+        # Multi-stage workflow: seed should go to the node with add_noise="enable"
+        workflow = {
+            "78": {"class_type": "KSamplerAdvanced", "inputs": {"noise_seed": 0, "add_noise": "disable"}, "_meta": {}},
+            "81": {"class_type": "KSamplerAdvanced", "inputs": {"noise_seed": 999, "add_noise": "enable"}, "_meta": {}},
+        }
+        apply_params(workflow, seed=12345)
+        # Node 78 (add_noise=disable) should NOT be modified
+        assert workflow["78"]["inputs"]["noise_seed"] == 0
+        # Node 81 (add_noise=enable) should get the seed
+        assert workflow["81"]["inputs"]["noise_seed"] == 12345
 
     def test_random_noise_seed(self):
         workflow = {
@@ -173,6 +186,16 @@ class TestApplyParamsUnit:
         }
         apply_params(workflow, filename_prefix="new_video")
         assert workflow["60"]["inputs"]["filename_prefix"] == "new_video"
+
+    def test_video_latent_length(self):
+        # Test that length parameter is applied to video latent nodes
+        workflow = {
+            "74": {"class_type": "EmptyHunyuanLatentVideo", "inputs": {"width": 640, "height": 640, "length": 81, "batch_size": 1}, "_meta": {}},
+        }
+        apply_params(workflow, width=512, height=512, length=121)
+        assert workflow["74"]["inputs"]["width"] == 512
+        assert workflow["74"]["inputs"]["height"] == 512
+        assert workflow["74"]["inputs"]["length"] == 121
 
 
 # Text-to-Image templates
