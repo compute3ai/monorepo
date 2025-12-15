@@ -127,7 +127,8 @@ export default function JobsPage() {
 
       if (response.ok) {
         const jobsData = await response.json();
-        setJobs(jobsData);
+        // Handle both array (legacy) and paginated response
+        setJobs(Array.isArray(jobsData) ? jobsData : jobsData.jobs || []);
 
         // Fetch transactions for all jobs
         const txResponse = await fetch(
