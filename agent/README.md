@@ -65,35 +65,35 @@ JWTs are validated by calling the backend `/user` endpoint.
 
 ```http
 # List threads
-GET /threads?limit=20
+GET /chats?limit=20
 
 # Create thread
-POST /threads
+POST /chats
 {"title": "Optional title"}
 
 # Get thread
-GET /threads/{thread_id}
+GET /chats/{thread_id}
 
 # Delete thread
-DELETE /threads/{thread_id}
+DELETE /chats/{thread_id}
 ```
 
 ### Messages
 
 ```http
 # List messages
-GET /threads/{thread_id}/messages
+GET /chats/{thread_id}/messages
 
 # Send message (waits for full response)
-POST /threads/{thread_id}/messages
+POST /chats/{thread_id}/messages
 {"content": "Hello, how are you?"}
 
 # Send message (streaming via SSE)
-POST /threads/{thread_id}/messages/stream
+POST /chats/{thread_id}/messages/stream
 {"content": "Hello, how are you?"}
 
 # Edit message and regenerate from that point
-POST /threads/{thread_id}/messages/{message_id}/update
+POST /chats/{thread_id}/messages/{message_id}/update
 {"content": "Updated message"}
 ```
 

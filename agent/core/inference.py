@@ -170,48 +170,87 @@ async def stream_completion(
     messages = messages.copy()
 
     try:
-        # Try with tools first
-        if tools:
-            try:
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    tools=tools,
-                )
-            except Exception as tool_err:
-                err_str = str(tool_err).lower()
-                tool_unsupported = (
-                    "tool use" in err_str or
-                    "tool_use" in err_str or
-                    "function calling" in err_str or
-                    "no endpoints found" in err_str
-                )
-                if tool_unsupported:
-                    logger.warning(f"Model {model} doesn't support tools, falling back")
-                    tools = None
-                else:
-                    raise
-
-        # Stream without tools
-        if not tools:
+        # Stream with tools - accumulate content and tool calls
+        try:
+            logger.info(f"[STREAM] Starting streaming call to {model} with tools={tools is not None}")
             stream = await client.chat.completions.create(
                 model=model,
                 messages=messages,
+                tools=tools if tools else None,
                 stream=True,
             )
+            logger.info(f"[STREAM] Stream created, starting iteration")
+        except Exception as tool_err:
+            err_str = str(tool_err).lower()
+            tool_unsupported = (
+                "tool use" in err_str or
+                "tool_use" in err_str or
+                "function calling" in err_str or
+                "no endpoints found" in err_str
+            )
+            if tool_unsupported:
+                logger.warning(f"Model {model} doesn't support tools, falling back")
+                tools = None
+                stream = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True,
+                )
+            else:
+                raise
 
-            full_response = ""
-            async for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    content = chunk.choices[0].delta.content
-                    full_response += content
-                    yield StreamEvent(type="token", content=full_response)
+        # Accumulate streaming response
+        full_response = ""
+        tool_calls = {}  # id -> {name, arguments}
+        first_token_logged = False
 
+        async for chunk in stream:
+            if not first_token_logged:
+                logger.info(f"[STREAM] First chunk received")
+                first_token_logged = True
+            if not chunk.choices:
+                continue
+
+            delta = chunk.choices[0].delta
+
+            # Stream content immediately
+            if delta.content:
+                full_response += delta.content
+                if len(full_response) <= 50:  # Log first 50 chars worth of token events
+                    logger.info(f"[STREAM] Token yielded, total_len={len(full_response)}")
+                yield StreamEvent(type="token", content=full_response)
+
+            # Accumulate tool calls
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    tc_id = tc.id or list(tool_calls.keys())[-1] if tool_calls else "0"
+                    if tc.id:
+                        tool_calls[tc.id] = {"name": tc.function.name or "", "arguments": ""}
+                    if tc.function and tc.function.arguments:
+                        if tc_id in tool_calls:
+                            tool_calls[tc_id]["arguments"] += tc.function.arguments
+
+        # If no tool calls, we're done
+        if not tool_calls:
+            logger.info(f"[STREAM] No tool calls, yielding done event with {len(full_response)} chars")
             yield StreamEvent(type="done", content=full_response)
             return
 
-        # Handle tool calls
-        assistant_message = response.choices[0].message
+        # Build assistant message for tool handling
+        class MockToolCall:
+            def __init__(self, id, name, args):
+                self.id = id
+                self.function = type('obj', (object,), {'name': name, 'arguments': args})()
+
+        class MockMessage:
+            def __init__(self, content, tool_calls):
+                self.content = content
+                self.tool_calls = tool_calls
+
+        assistant_message = MockMessage(
+            content=full_response,
+            tool_calls=[MockToolCall(id, tc["name"], tc["arguments"]) for id, tc in tool_calls.items()]
+        )
 
         if assistant_message.tool_calls:
             tool_names = [tc.function.name for tc in assistant_message.tool_calls]
@@ -317,11 +356,6 @@ async def stream_completion(
                     yield StreamEvent(type="token", content=full_response)
 
             yield StreamEvent(type="done", content=full_response)
-
-        else:
-            # No tool calls - yield the response
-            final_response = assistant_message.content or ""
-            yield StreamEvent(type="done", content=final_response)
 
     except Exception as e:
         error_msg = str(e)

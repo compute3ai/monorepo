@@ -13,9 +13,11 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from frontends.web.dependencies import require_api_key
+from frontends.web.dependencies import require_api_key, require_auth, AuthInfo, JWT_VERIFY, PUBLIC_KEY
+import jwt
 from frontends.web.state import active_streams
 from services import chats, users
 from core import stream_completion
@@ -52,6 +54,7 @@ class ChatResponse(BaseModel):
 
 class MessageCreate(BaseModel):
     content: str
+    model: Optional[str] = None  # Override user's default model
 
 
 class MessageResponse(BaseModel):
@@ -97,12 +100,15 @@ async def run_inference(
     """
     import json as json_module
 
-    # Initialize stream state
-    active_streams[message_id] = {
-        "content": "",
-        "status": "streaming",
-        "subscribers": set(),
-    }
+    # Update stream state (already initialized in POST endpoint)
+    if message_id not in active_streams:
+        active_streams[message_id] = {
+            "content": "",
+            "status": "streaming",
+            "subscribers": set(),
+        }
+    else:
+        active_streams[message_id]["status"] = "streaming"
 
     try:
         # Update status to streaming
@@ -124,7 +130,9 @@ async def run_inference(
                 active_streams[message_id]["content"] = final_content
 
                 # Broadcast to subscribers
-                for queue in active_streams[message_id]["subscribers"]:
+                subs = active_streams[message_id]["subscribers"]
+                logger.info(f"[WS] Token event, {len(subs)} subscribers, content_len={len(final_content)}")
+                for queue in subs:
                     await queue.put({"type": "token", "content": final_content})
 
                 # Periodically save to DB (every ~500 chars)
@@ -318,8 +326,7 @@ async def get_messages(
 async def send_message(
     chat_id: str,
     data: MessageCreate,
-    background_tasks: BackgroundTasks,
-    user_id: str = Depends(require_api_key),
+    auth: AuthInfo = Depends(require_auth),
 ):
     """
     Send a message and start AI response generation.
@@ -328,15 +335,15 @@ async def send_message(
     generated in the background. Connect to the WebSocket endpoint to
     receive streaming tokens.
     """
+    user_id = auth.user_id
+
     # Verify chat exists and belongs to user
     chat = chats.get_chat(chat_id)
     if not chat or chat.user_id != user_id:
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    # Get user for API key and model
+    # Get user for model preference
     user = users.get_user(user_id)
-    if not user or not user.api_key:
-        raise HTTPException(status_code=400, detail="User has no API key configured")
 
     # Store user message
     user_msg = chats.add_message(
@@ -351,7 +358,8 @@ async def send_message(
     assistant_msg = chats.create_assistant_message(user_id, chat_id)
 
     # Build messages for API
-    system_prompt = build_system_prompt(user.webhook_secret)
+    webhook_secret = user.webhook_secret if user else None
+    system_prompt = build_system_prompt(webhook_secret)
     chat_messages = chats.get_messages(chat_id)
 
     # Convert to API format (exclude the pending assistant message)
@@ -360,23 +368,125 @@ async def send_message(
         if m["id"] != assistant_msg.id and m["status"] == "complete":
             messages.append({"role": m["role"], "content": m["content"]})
 
-    # Start inference in background
-    notify_url = get_notify_url(user.webhook_secret)
-    background_tasks.add_task(
-        run_inference,
-        user_id=user_id,
-        chat_id=chat_id,
-        message_id=assistant_msg.id,
-        api_key=user.api_key,
-        model=user.model or DEFAULT_MODEL,
-        messages=messages,
-        notify_url=notify_url,
+    # Initialize stream state BEFORE starting background task (prevents race condition)
+    active_streams[assistant_msg.id] = {
+        "content": "",
+        "status": "pending",
+        "subscribers": set(),
+    }
+
+    # Start inference as async task (not BackgroundTasks - needs to run concurrently)
+    notify_url = get_notify_url(webhook_secret) if webhook_secret else None
+    asyncio.create_task(
+        run_inference(
+            user_id=user_id,
+            chat_id=chat_id,
+            message_id=assistant_msg.id,
+            api_key=auth.token,  # Pass JWT for backend auth
+            model=data.model or (user.model if user else None) or DEFAULT_MODEL,
+            messages=messages,
+            notify_url=notify_url,
+        )
     )
 
     return SendMessageResponse(
         user_message_id=user_msg.id,
         assistant_message_id=assistant_msg.id,
         status="processing",
+    )
+
+
+# =============================================================================
+# SSE Streaming endpoint
+# =============================================================================
+
+
+@router.post("/{chat_id}/messages/stream")
+async def send_message_stream(
+    chat_id: str,
+    data: MessageCreate,
+    auth: AuthInfo = Depends(require_auth),
+):
+    """
+    Send a message and stream the AI response via SSE.
+
+    Returns a streaming response with Server-Sent Events:
+    - data: <token> - Each token as it's generated
+    - event: done - When streaming is complete
+    """
+    user_id = auth.user_id
+
+    # Verify chat exists and belongs to user
+    chat = chats.get_chat(chat_id)
+    if not chat or chat.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Chat not found")
+
+    # Get user for model preference
+    user = users.get_user(user_id)
+
+    # Store user message
+    user_msg = chats.add_message(
+        user_id=user_id,
+        chat_id=chat_id,
+        role="user",
+        content=data.content,
+        status="complete",
+    )
+
+    # Create pending assistant message
+    assistant_msg = chats.create_assistant_message(user_id, chat_id)
+
+    # Build messages for API
+    webhook_secret = user.webhook_secret if user else None
+    system_prompt = build_system_prompt(webhook_secret)
+    chat_messages = chats.get_messages(chat_id)
+
+    # Convert to API format (exclude the pending assistant message)
+    messages = [{"role": "system", "content": system_prompt}]
+    for m in chat_messages:
+        if m["id"] != assistant_msg.id and m["status"] == "complete":
+            messages.append({"role": m["role"], "content": m["content"]})
+
+    notify_url = get_notify_url(webhook_secret) if webhook_secret else None
+    model = data.model or (user.model if user else None) or DEFAULT_MODEL
+
+    async def generate_sse():
+        """Generator that yields SSE formatted events."""
+        full_content = ""
+        try:
+            async for event in stream_completion(
+                api_key=auth.token,  # Pass JWT for backend auth
+                model=model,
+                messages=messages,
+                notify_url=notify_url,
+            ):
+                if event.type == "token":
+                    full_content = event.content
+                    yield f"data: {event.content}\n\n"
+
+                elif event.type == "done":
+                    # Update the assistant message with final content
+                    chats.update_message_content(assistant_msg.id, full_content)
+                    chats.update_message_status(assistant_msg.id, "complete")
+                    yield f"event: done\ndata: {assistant_msg.id}\n\n"
+
+                elif event.type == "error":
+                    chats.update_message_status(assistant_msg.id, "error", error=event.content)
+                    yield f"event: error\ndata: {event.content}\n\n"
+
+        except Exception as e:
+            logger.exception(f"SSE streaming error: {e}")
+            chats.update_message_status(assistant_msg.id, "error", error=str(e))
+            yield f"event: error\ndata: {str(e)}\n\n"
+
+    return StreamingResponse(
+        generate_sse(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
@@ -401,7 +511,7 @@ async def respond_to_selection(
     chat_id: str,
     data: SelectionResponse,
     background_tasks: BackgroundTasks,
-    user_id: str = Depends(require_api_key),
+    auth: AuthInfo = Depends(require_auth),
 ):
     """
     Respond to a selection message.
@@ -409,6 +519,8 @@ async def respond_to_selection(
     When the assistant presents options (type=selection), the frontend
     should call this endpoint with the user's choice.
     """
+    user_id = auth.user_id
+
     # Verify chat exists and belongs to user
     chat = chats.get_chat(chat_id)
     if not chat or chat.user_id != user_id:
@@ -452,13 +564,10 @@ async def respond_to_selection(
     # If there's a tool call to execute, do it
     if tool_call and data.selected_id == "proceed":
         from core import execute_confirmed_tool
-        from services import users
 
         user = users.get_user(user_id)
-        if not user or not user.api_key:
-            raise HTTPException(status_code=400, detail="User has no API key configured")
-
-        notify_url = get_notify_url(user.webhook_secret)
+        webhook_secret = user.webhook_secret if user else None
+        notify_url = get_notify_url(webhook_secret) if webhook_secret else None
 
         # Execute the tool in background
         async def run_tool_and_notify():
@@ -466,7 +575,7 @@ async def respond_to_selection(
             tool_args = tool_call.get("arguments", {})
 
             async for event in execute_confirmed_tool(
-                api_key=user.api_key,
+                api_key=auth.token,  # Pass JWT for backend auth
                 tool_name=tool_name,
                 tool_args=tool_args,
                 user_id=user_id,
@@ -529,21 +638,29 @@ async def stream_chat(
     """
     await websocket.accept()
 
-    # Simple auth via query param for WebSocket
-    # In production, use a proper token
-    api_key = websocket.query_params.get("api_key")
-    if not api_key:
-        await websocket.close(code=4001, reason="Missing api_key")
+    # JWT auth via query param for WebSocket
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001, reason="Missing token")
         return
 
-    # Verify user owns this chat
-    from db.models import get_session, User
-    with get_session() as session:
-        user = session.query(User).filter(User.api_key == api_key).first()
-        if not user:
-            await websocket.close(code=4001, reason="Invalid api_key")
+    # Validate JWT and extract user_id
+    try:
+        if JWT_VERIFY:
+            payload = jwt.decode(token, PUBLIC_KEY, algorithms=["ES256"])
+        else:
+            payload = jwt.decode(token, options={"verify_signature": False})
+
+        user_id = payload.get("user_id")
+        if not user_id:
+            await websocket.close(code=4001, reason="Token missing user_id")
             return
-        user_id = user.user_id
+    except jwt.ExpiredSignatureError:
+        await websocket.close(code=4001, reason="Token expired")
+        return
+    except jwt.InvalidTokenError as e:
+        await websocket.close(code=4001, reason=f"Invalid token: {e}")
+        return
 
     chat = chats.get_chat(chat_id)
     if not chat or chat.user_id != user_id:
@@ -554,14 +671,15 @@ async def stream_chat(
     queue: asyncio.Queue = asyncio.Queue()
     subscribed_message_id: Optional[int] = None
 
-    try:
-        while True:
-            # Wait for client message or queue item
-            try:
-                data = await asyncio.wait_for(websocket.receive_json(), timeout=0.1)
-
+    async def handle_client_messages():
+        """Handle incoming WebSocket messages from client."""
+        nonlocal subscribed_message_id
+        try:
+            while True:
+                data = await websocket.receive_json()
                 if data.get("type") == "subscribe":
                     message_id = data.get("message_id")
+                    logger.info(f"[WS] Subscribe request for message_id={message_id}, in_active_streams={message_id in active_streams}")
                     if message_id and message_id in active_streams:
                         # Unsubscribe from previous
                         if subscribed_message_id and subscribed_message_id in active_streams:
@@ -570,6 +688,7 @@ async def stream_chat(
                         # Subscribe to new
                         subscribed_message_id = message_id
                         active_streams[message_id]["subscribers"].add(queue)
+                        logger.info(f"[WS] Subscribed, now {len(active_streams[message_id]['subscribers'])} subscribers")
 
                         # Send current state
                         state = active_streams[message_id]
@@ -578,18 +697,25 @@ async def stream_chat(
                             "content": state["content"],
                             "status": state["status"],
                         })
+        except WebSocketDisconnect:
+            pass
 
-            except asyncio.TimeoutError:
-                pass
+    async def handle_queue_messages():
+        """Forward queue messages to WebSocket."""
+        try:
+            while True:
+                event = await queue.get()
+                await websocket.send_json(event)
+        except WebSocketDisconnect:
+            pass
 
-            # Check queue for updates
-            try:
-                while True:
-                    event = queue.get_nowait()
-                    await websocket.send_json(event)
-            except asyncio.QueueEmpty:
-                pass
-
+    try:
+        # Run both handlers concurrently
+        await asyncio.gather(
+            handle_client_messages(),
+            handle_queue_messages(),
+            return_exceptions=True,
+        )
     except WebSocketDisconnect:
         pass
     finally:

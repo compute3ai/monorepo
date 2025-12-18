@@ -4,6 +4,7 @@ Chat service - chat and message management functions.
 
 from datetime import datetime
 from db.models import get_session, User, Chat, Message
+from services.users import get_or_create_user
 
 MAX_MESSAGES_PER_USER = 2048
 
@@ -15,10 +16,11 @@ MAX_MESSAGES_PER_USER = 2048
 
 def create_chat(user_id: str, title: str | None = None) -> Chat:
     """Create a new chat for user and set as current."""
+    # Auto-create user if not exists
+    get_or_create_user(user_id)
+
     with get_session() as session:
         user = session.query(User).filter(User.user_id == user_id).first()
-        if not user:
-            raise ValueError(f"User not found: {user_id}")
 
         chat = Chat(user_id=user_id, title=title)
         session.add(chat)
@@ -28,6 +30,8 @@ def create_chat(user_id: str, title: str | None = None) -> Chat:
         user.current_chat_id = chat.id
         session.commit()
 
+        # Refresh after second commit to load all attrs before detaching
+        session.refresh(chat)
         session.expunge(chat)
         return chat
 
@@ -55,10 +59,11 @@ def get_user_chats(user_id: str, limit: int = 20) -> list[Chat]:
 
 def get_or_create_current_chat(user_id: str) -> Chat:
     """Get user's current chat, creating one if needed."""
+    # Auto-create user if not exists
+    get_or_create_user(user_id)
+
     with get_session() as session:
         user = session.query(User).filter(User.user_id == user_id).first()
-        if not user:
-            raise ValueError(f"User not found: {user_id}")
 
         if user.current_chat_id:
             chat = session.query(Chat).filter(Chat.id == user.current_chat_id).first()
@@ -75,6 +80,8 @@ def get_or_create_current_chat(user_id: str) -> Chat:
         user.current_chat_id = chat.id
         session.commit()
 
+        # Refresh after second commit to load all attrs before detaching
+        session.refresh(chat)
         session.expunge(chat)
         return chat
 

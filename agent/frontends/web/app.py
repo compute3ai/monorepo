@@ -46,6 +46,9 @@ def create_app() -> FastAPI:
         description="AI chat agent with GPU compute tools",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=f"{prefix}/docs",
+        redoc_url=f"{prefix}/redoc",
+        openapi_url=f"{prefix}/openapi.json",
     )
 
     # CORS
