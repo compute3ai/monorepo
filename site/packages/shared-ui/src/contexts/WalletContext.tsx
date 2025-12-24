@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, ReactNode } from "react"
 import { createWalletClient, custom, type WalletClient } from "viem"
 import { base } from "viem/chains"
 
@@ -36,9 +36,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       let provider = window.ethereum
 
       // If this is Phantom's proxy and Phantom is available, use Phantom directly
-      if (window.phantom?.ethereum) {
+      const phantom = (window as unknown as { phantom?: { ethereum?: typeof window.ethereum } }).phantom
+      if (phantom?.ethereum) {
         console.log("🦊 Using Phantom wallet provider")
-        provider = window.phantom.ethereum
+        provider = phantom.ethereum
       }
 
       // Request account access

@@ -72,6 +72,7 @@ function ChatPageContent() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const creatingFreeUserRef = useRef(false);
 
   // Load theme from localStorage
   useEffect(() => {
@@ -224,6 +225,10 @@ function ChatPageContent() {
 
     // If not authenticated, create a free user
     if (!isAuthenticated) {
+      // Prevent multiple free user creation calls (race condition guard)
+      if (creatingFreeUserRef.current) return;
+      creatingFreeUserRef.current = true;
+
       const createFreeUser = async () => {
         try {
           const response = await fetch(`${process.env.NEXT_PUBLIC_AUTH_BACKEND}/auth/free`, {
@@ -243,6 +248,7 @@ function ChatPageContent() {
           console.error('Failed to create free user:', e);
           // Fall back to showing login
           localStorage.removeItem('c3_pending_chat_message');
+          creatingFreeUserRef.current = false;
         }
       };
       createFreeUser();
