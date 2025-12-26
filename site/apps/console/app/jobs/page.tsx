@@ -146,8 +146,10 @@ export default function JobsPage() {
           // Create a map of job_id to transaction
           const txMap: Record<string, JobTransaction> = {};
           for (const tx of txData.transactions || []) {
-            if (tx.job_id && tx.transaction_type === 'job') {
-              txMap[tx.job_id] = {
+            // Check both tx.job_id (new) and tx.meta?.job_id (legacy)
+            const jobId = tx.job_id || tx.meta?.job_id;
+            if (jobId && tx.transaction_type === 'job') {
+              txMap[jobId] = {
                 id: tx.id,
                 amount_usd: tx.amount_usd,
                 status: tx.status
