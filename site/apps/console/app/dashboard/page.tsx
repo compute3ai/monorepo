@@ -29,8 +29,10 @@ interface Balance {
   rewards_balance_units: number;
   total_balance: string;
   total_balance_units: number;
-  currency: string;
-  decimals: number;
+  pending_reservations: string;
+  pending_reservations_units: number;
+  available_balance: string;
+  available_balance_units: number;
 }
 
 interface Transaction {
@@ -502,22 +504,34 @@ export default function DashboardPage() {
                   Top Up
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="card bg-white p-6 rounded-lg shadow">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     Available Balance
                   </h3>
-                  <p className="text-2xl font-bold text-gray-900">${balance.balance}</p>
+                  <p className="text-2xl font-bold text-gray-900">${balance.available_balance}</p>
+                  {balance.pending_reservations_units > 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      ${balance.pending_reservations} reserved
+                    </p>
+                  )}
                 </div>
 
-                {transactions.some(tx => tx.rewards) && (
-                  <div className="card bg-white p-6 rounded-lg shadow">
-                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      Rewards Balance
-                    </h3>
-                    <p className="text-2xl font-bold text-gray-900">${balance.rewards_balance}</p>
-                  </div>
-                )}
+                <div className="card bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Rewards Balance
+                  </h3>
+                  <p className={`text-2xl font-bold ${balance.rewards_balance_units < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                    ${balance.rewards_balance}
+                  </p>
+                </div>
+
+                <div className="card bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Regular Balance
+                  </h3>
+                  <p className="text-2xl font-bold text-gray-900">${balance.balance}</p>
+                </div>
               </div>
             </>
           )}
