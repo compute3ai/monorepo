@@ -25,14 +25,110 @@ Templates are pre-configured ComfyUI workflows optimized for specific generation
 | `image_chroma_text_to_image` | Chroma model | L40S |
 | `hidream_i1_full` | HiDream image model | L40S, A100 |
 
-## Video Generation
+## Image Editing
+
+Templates that transform or edit existing images using reference images.
+
+| Template | Description | Input Nodes | Recommended GPU |
+|----------|-------------|-------------|-----------------|
+| `hidream_e1_full` | HiDream E1 editing | 13 (main image) | L40S, A100 |
+| `image_qwen_image_edit_2509` | Qwen edit (up to 3 images) | 78, 106\*, 108\* | L40S |
+| `image_qwen_image_edit_2511` | Qwen multi-reference | 41, 83, 87\* | L40S |
+
+\*Nodes marked with `*` are bypassed by default - enable with `{"enabled": true}` in nodes config.
+
+### Image Editing Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `image_url` | string | URL of the main input image |
+| `nodes` | object | Node-specific parameters (for multi-image workflows) |
+
+### Multi-Image Example
+
+For templates with multiple input images, use the `nodes` parameter:
+
+```python
+render = c3.renders.create(
+    params={
+        "template": "image_qwen_image_edit_2509",
+        "prompt": "Transform the subject with these style references",
+        "image_url": "https://example.com/main.jpg",
+        "nodes": {
+            "106": {"enabled": True, "image_url": "https://example.com/ref1.jpg"},
+            "108": {"enabled": True, "image_url": "https://example.com/ref2.jpg"},
+        }
+    }
+)
+```
+
+## Video Generation (Text-to-Video)
 
 | Template | Description | Recommended GPU |
 |----------|-------------|-----------------|
-| `video_wan2_2_14B_t2v` | Wan 2.2 14B text-to-video | A100, H100 |
+| `video_wan2_2_14B_t2v` | Wan 2.2 14B text-to-video | RTX PRO 6000, A100, H100 |
 | `video_wan2.1_alpha_t2v_14B` | Wan 2.1 alpha text-to-video | A100, H100 |
 | `video_hunyuan_video_1.5_720p_t2v` | Hunyuan 1.5 720p | A100, H100 |
 | `hunyuan_video_text_to_video` | Hunyuan base video | L40S, A100 |
+
+## Video Generation (Image-to-Video)
+
+| Template | Description | Input Nodes | Recommended GPU |
+|----------|-------------|-------------|-----------------|
+| `video_wan2_2_14B_i2v` | Wan 2.2 image-to-video | 97 (image) | RTX PRO 6000, A100 |
+| `video_wan2_2_14B_flf2v` | Wan 2.2 first/last frame | 80 (start), 89 (end) | RTX PRO 6000, A100 |
+| `video_wan2_2_14B_animate` | Wan 2.2 animate image | (varies) | RTX PRO 6000, A100 |
+
+### Image-to-Video Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `image_url` | string | URL of the input image to animate |
+| `nodes` | object | Node-specific parameters (for multi-image workflows) |
+
+### First/Last Frame Example
+
+Morph between two images:
+
+```python
+render = c3.renders.create(
+    params={
+        "template": "video_wan2_2_14B_flf2v",
+        "prompt": "smooth transition between frames",
+        "nodes": {
+            "80": {"image_url": "https://example.com/start.png"},
+            "89": {"image_url": "https://example.com/end.png"},
+        }
+    }
+)
+```
+
+## Video Generation (Audio-Driven)
+
+| Template | Description | Input Nodes | Recommended GPU |
+|----------|-------------|-------------|-----------------|
+| `video_humo` | HuMo lip-sync | 49 (image), 58 (audio) | RTX PRO 6000, A100 |
+| `video_wan2_2_14B_s2v` | Wan 2.2 speech-to-video | (varies) | RTX PRO 6000, A100 |
+
+### Audio-Driven Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `image_url` | string | URL of the face/character image |
+| `audio_url` | string | URL of the audio/speech file |
+
+### Lip-Sync Example
+
+```python
+render = c3.renders.create(
+    params={
+        "template": "video_humo",
+        "prompt": "person speaking naturally",
+        "image_url": "https://example.com/face.png",
+        "audio_url": "https://example.com/speech.wav",
+    }
+)
+```
 
 ## Template Parameters
 

@@ -1,6 +1,6 @@
 """Renders API"""
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
     from .http import HTTPClient
@@ -212,5 +212,65 @@ class Renders:
         data = self._http.post(
             "/api/flow/speaking-video-wan",
             json={"prompt": prompt, "image_url": image_url, "audio_url": audio_url}
+        )
+        return Render.from_dict(data)
+
+    def image_to_image(
+        self,
+        prompt: str,
+        image_urls: List[str],
+    ) -> Render:
+        """Transform images using Qwen Image Edit with 1-3 input images.
+
+        Args:
+            prompt: Description of the transformation
+            image_urls: List of 1-3 image URLs (first is main, others are references)
+
+        Example:
+            render = c3.renders.image_to_image(
+                "Apply the artistic style from the references",
+                [
+                    "https://example.com/subject.jpg",
+                    "https://example.com/style1.jpg",
+                    "https://example.com/style2.jpg",
+                ]
+            )
+        """
+        data = self._http.post(
+            "/api/flow/image-to-image",
+            json={
+                "prompt": prompt,
+                "image_urls": image_urls,
+            }
+        )
+        return Render.from_dict(data)
+
+    def first_last_frame_video(
+        self,
+        prompt: str,
+        start_image_url: str,
+        end_image_url: str,
+    ) -> Render:
+        """Generate video morphing between two images using Wan 2.2.
+
+        Args:
+            prompt: Description of the transition/motion
+            start_image_url: URL of the starting frame
+            end_image_url: URL of the ending frame
+
+        Example:
+            render = c3.renders.first_last_frame_video(
+                "smooth transition from day to night",
+                "https://example.com/day.png",
+                "https://example.com/night.png"
+            )
+        """
+        data = self._http.post(
+            "/api/flow/first-last-frame-video",
+            json={
+                "prompt": prompt,
+                "start_image_url": start_image_url,
+                "end_image_url": end_image_url,
+            }
         )
         return Render.from_dict(data)

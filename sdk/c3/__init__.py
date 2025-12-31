@@ -5,7 +5,8 @@ from .http import APIError
 from .instances import GPUType, GPUConfig, Region, GPUPricing, PricingTier
 from .jobs import Job, JobMetrics, GPUMetrics, find_job, find_by_id, find_by_hostname, find_by_ip
 from .renders import Render, RenderStatus
-from .job import BaseJob, ComfyUIJob, apply_params, find_node, find_nodes, load_template, graph_to_api, DEFAULT_OBJECT_INFO
+from .files import File
+from .job import BaseJob, ComfyUIJob, apply_params, apply_graph_modes, find_node, find_nodes, load_template, graph_to_api, DEFAULT_OBJECT_INFO
 from .logs import LogStream, stream_logs, fetch_logs
 
 __version__ = "0.2.1"
@@ -29,6 +30,8 @@ __all__ = [
     # Renders API
     "Render",
     "RenderStatus",
+    # Files API
+    "File",
     # Job lookup utils
     "find_job",
     "find_by_id",
@@ -39,6 +42,7 @@ __all__ = [
     "ComfyUIJob",
     # Workflow utils
     "apply_params",
+    "apply_graph_modes",
     "find_node",
     "find_nodes",
     "load_template",

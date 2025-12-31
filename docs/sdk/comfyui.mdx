@@ -130,6 +130,71 @@ Supported parameters:
 | `width` | Output width | EmptyLatentImage, etc. |
 | `height` | Output height | EmptyLatentImage, etc. |
 | `filename_prefix` | Output filename | SaveImage, SaveVideo |
+| `nodes` | Node-specific params by ID | Any node (see below) |
+
+### Node-Specific Parameters
+
+For advanced workflows requiring direct node control (images, audio, custom text), use the `nodes` parameter:
+
+```python
+from c3 import apply_params
+
+apply_params(
+    workflow,
+    prompt="your prompt here",
+    nodes={
+        "80": {"image": "start_frame.png"},   # LoadImage node
+        "89": {"image": "end_frame.png"},     # LoadImage node
+        "58": {"audio": "speech.wav"},        # LoadAudio node
+        "90": {"text": "custom prompt"},      # CLIPTextEncode node
+    }
+)
+```
+
+The `nodes` dict maps node IDs to input values:
+
+| Key | Node Type | Description |
+|-----|-----------|-------------|
+| `image` | LoadImage | Filename of uploaded image |
+| `audio` | LoadAudio | Filename of uploaded audio |
+| `text` | *TextEncode* | Text for any TextEncode node |
+| (any) | Any | Generic input (fallback) |
+
+To find node IDs, use `c3 comfyui show <template>` or `--workflow-json` with the CLI.
+
+### Enable/Disable Nodes
+
+Use `apply_graph_modes()` to enable or disable nodes **before** converting to API format:
+
+```python
+from c3 import load_template, graph_to_api, apply_graph_modes, apply_params
+
+# Load template
+graph = load_template("image_qwen_image_edit_2509")
+
+# Enable bypassed nodes (must be done BEFORE graph_to_api)
+apply_graph_modes(graph, {
+    "106": {"enabled": True},  # Enable bypassed LoadImage
+    "108": {"enabled": True},  # Enable another bypassed node
+})
+
+# Now convert to API format
+workflow = graph_to_api(graph)
+
+# Apply other parameters
+apply_params(workflow, prompt="...", nodes={
+    "78": {"image": "main.png"},
+    "106": {"image": "ref1.png"},
+    "108": {"image": "ref2.png"},
+})
+```
+
+Supported mode values:
+- `{"enabled": True}` - Enable node (mode 0)
+- `{"enabled": False}` - Bypass node (mode 4)
+- `{"mode": 0}` - Active
+- `{"mode": 2}` - Muted
+- `{"mode": 4}` - Bypassed
 
 ### Run Workflows
 
@@ -162,17 +227,30 @@ for img in images:
 Templates are provided by the `comfyui-workflow-templates` packages:
 
 ### Image Generation
-- `flux_schnell` - Fast Flux model
-- `flux_dev_full_text_to_image` - Full Flux Dev
-- `sdxl_simple_example` - SDXL base
-- `image_qwen_image` - Qwen image model
-- `image_chroma_text_to_image` - Chroma model
+- `flux_schnell` - Fast Flux model (4 steps)
+- `flux_dev_full_text_to_image` - Full Flux Dev (high quality)
+- `image_qwen_image` - Qwen image model (excellent text rendering)
+- `hidream_i1_full` - HiDream I1 Full (50 steps, highest quality)
 
-### Video Generation
+### Image Editing (requires image input)
+- `hidream_e1_full` - HiDream E1 image editing (node 13: LoadImage)
+- `image_qwen_image_edit_2509` - Qwen image edit (nodes 78, 106*, 108* - up to 3 images)
+- `image_qwen_image_edit_2511` - Qwen multi-reference (nodes 41, 83, 87* - style transfer)
+
+*Nodes marked with `*` are bypassed by default - use `apply_graph_modes()` to enable.
+
+### Video Generation (text-to-video)
 - `video_wan2_2_14B_t2v` - Wan 2.2 text-to-video
-- `video_wan2.1_alpha_t2v_14B` - Wan 2.1 alpha
-- `video_hunyuan_video_1.5_720p_t2v` - Hunyuan video
-- `hunyuan_video_text_to_video` - Hunyuan base
+- `video_hunyuan_video_1.5_720p_t2v` - Hunyuan video 720p
+
+### Video Generation (image-to-video)
+- `video_wan2_2_14B_i2v` - Wan 2.2 image-to-video (node 97: LoadImage)
+- `video_wan2_2_14B_flf2v` - Wan 2.2 first/last frame (nodes 80, 89: LoadImage)
+- `video_wan2_2_14B_animate` - Wan 2.2 animate image
+
+### Video Generation (with audio)
+- `video_humo` - HuMo lip-sync (node 49: LoadImage, node 58: LoadAudio)
+- `video_wan2_2_14B_s2v` - Wan 2.2 speech-to-video (image + audio)
 
 ## Workflow Utilities
 
@@ -242,4 +320,135 @@ async def generate_image():
         c3.jobs.cancel(job.job.job_id)
 
 asyncio.run(generate_image())
+```
+
+## Example: Image-to-Video with Audio
+
+```python
+from c3 import C3, ComfyUIJob, apply_params
+
+c3 = C3()
+
+# Create job with RTX PRO 6000 (needed for video)
+job = ComfyUIJob.create(
+    c3,
+    gpu_type="rtxpro6000",
+    template="video_humo",
+    lb=8188,
+)
+
+job.wait_ready(timeout=300)
+
+# Upload image and audio to ComfyUI
+image_filename = job.upload_image("face.png")
+audio_filename = job.upload_audio("speech.wav")
+
+# Load workflow and configure with node IDs
+graph = job.load_template("video_humo")
+workflow = job.convert_workflow(graph)
+
+apply_params(
+    workflow,
+    prompt="a person speaking naturally",
+    nodes={
+        "49": {"image": image_filename},  # LoadImage node
+        "58": {"audio": audio_filename},  # LoadAudio node
+    }
+)
+
+# Run and download
+history = job.run(workflow, timeout=300)
+videos = job.get_output_videos(history)
+for vid in videos:
+    job.download_video(vid, "output/")
+```
+
+## Example: First/Last Frame Video
+
+```python
+from c3 import C3, ComfyUIJob, apply_params
+
+c3 = C3()
+
+job = ComfyUIJob.create(
+    c3,
+    gpu_type="rtxpro6000",
+    template="video_wan2_2_14B_flf2v",
+    lb=8188,
+)
+
+job.wait_ready(timeout=300)
+
+# Upload start and end frames
+start_img = job.upload_image("start_frame.png")
+end_img = job.upload_image("end_frame.png")
+
+graph = job.load_template("video_wan2_2_14B_flf2v")
+workflow = job.convert_workflow(graph)
+
+apply_params(
+    workflow,
+    prompt="smooth transition between frames",
+    nodes={
+        "80": {"image": start_img},  # Start frame LoadImage
+        "89": {"image": end_img},    # End frame LoadImage
+    }
+)
+
+history = job.run(workflow, timeout=300)
+```
+
+## Example: Multi-Image Style Transfer
+
+Use multiple reference images with Qwen Image Edit:
+
+```python
+from c3 import C3, ComfyUIJob, load_template, graph_to_api, apply_graph_modes, apply_params
+
+c3 = C3()
+
+# Create job
+job = ComfyUIJob.create(
+    c3,
+    gpu_type="l40s",
+    template="image_qwen_image_edit_2509",
+    lb=8188,
+)
+
+job.wait_ready(timeout=300)
+
+# Upload images
+main_img = job.upload_image("subject.jpg")
+ref1_img = job.upload_image("style_ref1.jpg")
+ref2_img = job.upload_image("style_ref2.jpg")
+
+# Load template and enable bypassed nodes
+graph = load_template("image_qwen_image_edit_2509")
+
+# Enable the extra reference image nodes (bypassed by default)
+apply_graph_modes(graph, {
+    "106": {"enabled": True},
+    "108": {"enabled": True},
+})
+
+# Convert to API format
+workflow = graph_to_api(graph)
+
+# Apply parameters
+apply_params(
+    workflow,
+    prompt="Transform the subject using these style references",
+    negative="ugly, blurry, low quality",
+    nodes={
+        "78": {"image": main_img},    # Main subject
+        "106": {"image": ref1_img},   # Style reference 1
+        "108": {"image": ref2_img},   # Style reference 2
+    }
+)
+
+# Run and download
+history = job.run(workflow, timeout=300)
+images = job.get_output_images(history)
+for img in images:
+    job.download_output(img["filename"], "output/")
 ```

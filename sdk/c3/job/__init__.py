@@ -3,6 +3,7 @@ from .base import BaseJob
 from .comfyui import (
     ComfyUIJob,
     apply_params,
+    apply_graph_modes,
     find_node,
     find_nodes,
     load_template,
@@ -14,6 +15,7 @@ __all__ = [
     "BaseJob",
     "ComfyUIJob",
     "apply_params",
+    "apply_graph_modes",
     "find_node",
     "find_nodes",
     "load_template",

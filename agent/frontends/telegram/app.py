@@ -21,7 +21,7 @@ from starlette.responses import Response
 import uvicorn
 
 from config import TELEGRAM_BOT_TOKEN, API_BASE_URL, URL_PREFIX
-from .handlers import cmd_start, cmd_newcontext, handle_message, handle_callback
+from .handlers import cmd_start, cmd_newcontext, handle_message, handle_callback, handle_photo, handle_audio, handle_voice
 from .webhook import handle_render_webhook
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -70,8 +70,11 @@ def create_app() -> Starlette:
     # Callback query handler
     application.add_handler(CallbackQueryHandler(handle_callback))
 
-    # Message handler
+    # Message handlers
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.AUDIO, handle_audio))
+    application.add_handler(MessageHandler(filters.VOICE, handle_voice))
 
     routes = [
         Route(f"{URL_PREFIX}/tg/webhook/{TELEGRAM_BOT_TOKEN}", telegram_webhook, methods=["POST"]),

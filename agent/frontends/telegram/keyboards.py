@@ -14,6 +14,16 @@ def after_response_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
+def error_keyboard() -> InlineKeyboardMarkup:
+    """Keyboard shown after an error occurs."""
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🔄 New Context", callback_data="new_context"),
+            InlineKeyboardButton("🔁 Retry", callback_data="retry"),
+        ]
+    ])
+
+
 def menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🖼️ Renders", callback_data="renders")],

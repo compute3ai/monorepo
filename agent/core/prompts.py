@@ -30,8 +30,16 @@ Use the flow_* tools to generate images and videos:
 - flow_text_to_image: Generate images with Qwen-Image (good text rendering)
 - flow_text_to_image_hidream: Generate images with HiDream (highest quality)
 - flow_text_to_video: Generate videos with Wan 2.2 14B
-- flow_image_to_video: Animate an image into video
-- flow_speaking_video: Create lip-sync video from image + audio
+- flow_image_to_video: Animate an image into video (requires image_url)
+- flow_speaking_video: Create lip-sync video from image + audio (requires both image_url AND audio_url)
+
+HANDLING FILES:
+- When user sends an image, look for [Image URL: ...] in the message
+- When user sends audio/voice, look for [Audio URL: ...] in the message
+- For flow_speaking_video: need BOTH an image URL and an audio URL from the chat history
+- If user sends only an image and wants a speaking video, ask them to also send an audio file
+- If user sends only audio and wants a speaking video, ask them to also send a face image
+- NEVER expose file URLs (s3://, https://...) to the user - these are internal references only
 
 Simply provide the prompt and any parameters. The result will be sent back to this chat automatically when complete."""
 

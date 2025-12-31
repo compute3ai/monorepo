@@ -27,6 +27,41 @@ DEFAULT_OBJECT_INFO = {
         "input": {"required": {"clip_name": [["model.safetensors"], {}], "type": [["stable_diffusion", "wan"], {}], "device": [["default", "cpu"], {}]}, "optional": {}},
         "input_order": {"required": ["clip_name", "type", "device"], "optional": []},
     },
+    "QuadrupleCLIPLoader": {
+        "input": {"required": {"clip_name1": [["clip.safetensors"], {}], "clip_name2": [["clip.safetensors"], {}], "clip_name3": [["clip.safetensors"], {}], "clip_name4": [["clip.safetensors"], {}]}, "optional": {}},
+        "input_order": {"required": ["clip_name1", "clip_name2", "clip_name3", "clip_name4"], "optional": []},
+    },
+    "AudioEncoderLoader": {
+        "input": {"required": {"audio_encoder_name": [["whisper_large_v3_fp16.safetensors"], {}]}, "optional": {}},
+        "input_order": {"required": ["audio_encoder_name"], "optional": []},
+    },
+    "WanHuMoImageToVideo": {
+        "input": {"required": {"positive": ["CONDITIONING"], "negative": ["CONDITIONING"], "vae": ["VAE"], "width": ["INT", {"default": 640}], "height": ["INT", {"default": 640}], "length": ["INT", {"default": 97}], "batch_size": ["INT", {"default": 1}]}, "optional": {"audio_encoder_output": ["AUDIO_ENCODER_OUTPUT"], "ref_image": ["IMAGE"]}},
+        "input_order": {"required": ["positive", "negative", "vae", "width", "height", "length", "batch_size"], "optional": ["audio_encoder_output", "ref_image"]},
+    },
+    "TextEncodeQwenImageEditPlus": {
+        "input": {
+            "required": {"clip": ["CLIP"], "vae": ["VAE"], "prompt": ["STRING", {"multiline": True}]},
+            "optional": {"image1": ["IMAGE"], "image2": ["IMAGE"], "image3": ["IMAGE"]},
+        },
+        "input_order": {"required": ["clip", "vae", "prompt"], "optional": ["image1", "image2", "image3"]},
+    },
+    "ModelSamplingAuraFlow": {
+        "input": {"required": {"model": ["MODEL"], "shift": ["FLOAT", {"default": 1.73}]}, "optional": {}},
+        "input_order": {"required": ["model", "shift"], "optional": []},
+    },
+    "CFGNorm": {
+        "input": {"required": {"model": ["MODEL"], "strength": ["FLOAT", {"default": 1.0}]}, "optional": {}},
+        "input_order": {"required": ["model", "strength"], "optional": []},
+    },
+    "FluxKontextImageScale": {
+        "input": {"required": {"image": ["IMAGE"], "max_pixels": ["INT", {"default": 1048576}]}, "optional": {}},
+        "input_order": {"required": ["image", "max_pixels"], "optional": []},
+    },
+    "ReferenceLatent": {
+        "input": {"required": {"conditioning": ["CONDITIONING"], "latent": ["LATENT"]}, "optional": {}},
+        "input_order": {"required": ["conditioning", "latent"], "optional": []},
+    },
     # Samplers
     "KSampler": {
         "input": {
@@ -67,6 +102,14 @@ DEFAULT_OBJECT_INFO = {
         "input_order": {"required": ["width", "height", "batch_size"], "optional": []},
     },
     "EmptyHunyuanLatentVideo": {
+        "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "length": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
+        "input_order": {"required": ["width", "height", "length", "batch_size"], "optional": []},
+    },
+    "WanImageToVideo": {
+        "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "length": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
+        "input_order": {"required": ["width", "height", "length", "batch_size"], "optional": []},
+    },
+    "WanStartEndFrames": {
         "input": {"required": {"width": ["INT", {}], "height": ["INT", {}], "length": ["INT", {}], "batch_size": ["INT", {}]}, "optional": {}},
         "input_order": {"required": ["width", "height", "length", "batch_size"], "optional": []},
     },
@@ -124,6 +167,15 @@ DEFAULT_OBJECT_INFO = {
     "SaveAnimatedWEBP": {
         "input": {"required": {"images": ["IMAGE"], "filename_prefix": ["STRING", {}], "fps": ["FLOAT", {}], "lossless": ["BOOLEAN", {}], "quality": ["INT", {}], "method": [["default"], {}]}, "optional": {}},
         "input_order": {"required": ["images", "filename_prefix", "fps", "lossless", "quality", "method"], "optional": []},
+    },
+    # Input loaders
+    "LoadImage": {
+        "input": {"required": {"image": ["STRING", {}]}, "optional": {}},
+        "input_order": {"required": ["image"], "optional": []},
+    },
+    "LoadAudio": {
+        "input": {"required": {"audio": ["STRING", {}]}, "optional": {}},
+        "input_order": {"required": ["audio"], "optional": []},
     },
 }
 
@@ -229,6 +281,40 @@ def find_node(workflow: dict, class_type: str, title_contains: str = None) -> tu
     return nodes[0] if nodes else (None, None)
 
 
+def apply_graph_modes(graph: dict, nodes_config: dict) -> dict:
+    """
+    Enable/disable nodes in graph before conversion to API format.
+
+    Args:
+        graph: ComfyUI graph (UI format with 'nodes' list)
+        nodes_config: Dict mapping node IDs to config. Supported keys:
+            - mode: 0 (active), 2 (muted), 4 (bypassed)
+            - enabled: True (mode=0) or False (mode=4) - convenience alias
+
+    Example:
+        apply_graph_modes(graph, {
+            "87": {"enabled": True},   # Enable bypassed node
+            "42": {"mode": 4},         # Bypass node
+        })
+
+    Returns:
+        Modified graph (mutated in place)
+    """
+    nodes_by_id = {str(n.get("id")): n for n in graph.get("nodes", [])}
+
+    for node_id, config in nodes_config.items():
+        node = nodes_by_id.get(str(node_id))
+        if not node:
+            continue
+
+        if "mode" in config:
+            node["mode"] = config["mode"]
+        elif "enabled" in config:
+            node["mode"] = 0 if config["enabled"] else 4
+
+    return graph
+
+
 def apply_params(workflow: dict, **params) -> dict:
     """
     Apply parameters to workflow nodes by finding them by type/title.
@@ -246,6 +332,10 @@ def apply_params(workflow: dict, **params) -> dict:
         steps: Sampling steps (KSampler or Flux2Scheduler)
         cfg: CFG scale (KSampler or FluxGuidance)
         filename_prefix: Output filename prefix (SaveImage, SaveVideo)
+        nodes: Dict mapping node IDs to input values for direct node control.
+               Format: {"node_id": {"image": "file.png", "text": "prompt", ...}}
+               Supports: LoadImage (image), LoadAudio (audio), *TextEncode* (text),
+               or any input key as generic fallback.
 
     Returns:
         Modified workflow (mutated in place)
@@ -259,26 +349,46 @@ def apply_params(workflow: dict, **params) -> dict:
         return None, None
 
     # CLIP text encode types (standard first, then variants)
-    clip_types = ["CLIPTextEncode", "CLIPTextEncodeFlux", "CLIPTextEncodeSD3"]
+    clip_types = ["CLIPTextEncode", "CLIPTextEncodeFlux", "CLIPTextEncodeSD3", "TextEncodeQwenImageEditPlus"]
 
     # Positive prompt - with "Positive" in title, or first CLIP encoder
     if "prompt" in params:
-        node_id, node = find_first(clip_types, "Positive")
-        if not node:
-            # Fallback: first CLIPTextEncode (many workflows have prompt as first)
-            for t in clip_types:
-                nodes = find_nodes(workflow, t)
-                if nodes:
-                    node_id, node = nodes[0]
+        # For TextEncodeQwenImageEditPlus, find the one with non-empty prompt (positive)
+        qwen_nodes = find_nodes(workflow, "TextEncodeQwenImageEditPlus")
+        if qwen_nodes:
+            # The node with non-empty prompt is the positive one
+            for node_id, node in qwen_nodes:
+                if node["inputs"].get("prompt", "").strip():
+                    node["inputs"]["prompt"] = params["prompt"]
                     break
-        if node:
-            node["inputs"]["text"] = params["prompt"]
+            else:
+                # Fallback: set on first node
+                qwen_nodes[0][1]["inputs"]["prompt"] = params["prompt"]
+        else:
+            # Standard CLIP encoders - find by title or use first
+            node_id, node = find_first(clip_types, "Positive")
+            if not node:
+                for t in clip_types:
+                    nodes = find_nodes(workflow, t)
+                    if nodes:
+                        node_id, node = nodes[0]
+                        break
+            if node:
+                node["inputs"]["text"] = params["prompt"]
 
-    # Negative prompt - with "Negative" in title
+    # Negative prompt - with "Negative" in title, or empty Qwen encoder
     if "negative" in params:
-        node_id, node = find_first(clip_types, "Negative")
-        if node:
-            node["inputs"]["text"] = params["negative"]
+        qwen_nodes = find_nodes(workflow, "TextEncodeQwenImageEditPlus")
+        if qwen_nodes:
+            # The node with empty prompt is the negative one
+            for node_id, node in qwen_nodes:
+                if not node["inputs"].get("prompt", "").strip():
+                    node["inputs"]["prompt"] = params["negative"]
+                    break
+        else:
+            node_id, node = find_first(clip_types, "Negative")
+            if node:
+                node["inputs"]["text"] = params["negative"]
 
     # Width/Height/Length - try various latent image/video nodes
     if "width" in params or "height" in params or "length" in params:
@@ -287,6 +397,7 @@ def apply_params(workflow: dict, **params) -> dict:
             "EmptySD3LatentImage", "EmptyFlux2LatentImage", "EmptyLatentImage",
             # Video
             "EmptyHunyuanLatentVideo", "EmptyMochiLatentVideo", "EmptyLTXVLatentVideo",
+            "WanImageToVideo", "WanStartEndFrames",
         ]
         node_id, node = find_first(latent_types)
         if node:
@@ -363,6 +474,31 @@ def apply_params(workflow: dict, **params) -> dict:
         node_id, node = find_first(save_types)
         if node:
             node["inputs"]["filename_prefix"] = params["filename_prefix"]
+
+    # Node-specific params by ID - for direct control over specific nodes
+    # Format: nodes={"node_id": {"image": "file.png", "text": "prompt", ...}}
+    if "nodes" in params:
+        nodes_dict = params["nodes"]
+        for node_id, values in nodes_dict.items():
+            node_id = str(node_id)  # Ensure string key
+            if node_id not in workflow:
+                continue  # Skip unknown nodes
+
+            node = workflow[node_id]
+            node_type = node.get("class_type", "")
+
+            # Map values to appropriate input fields based on node type
+            for key, value in values.items():
+                if key == "image" and node_type == "LoadImage":
+                    node["inputs"]["image"] = value
+                elif key == "audio" and node_type == "LoadAudio":
+                    node["inputs"]["audio"] = value
+                elif key == "text" and "Text" in node_type:
+                    # CLIPTextEncode, CLIPTextEncodeFlux, TextEncodeQwenImageEditPlus, etc.
+                    node["inputs"]["text"] = value
+                else:
+                    # Generic fallback: set input directly
+                    node["inputs"][key] = value
 
     return workflow
 
@@ -548,8 +684,18 @@ class ComfyUIJob(BaseJob):
         self._auth_headers: dict | None = None
         self._job_token: str | None = None
         self.template = template  # Template used to launch this job
-        self.use_lb = use_lb  # Using HTTPS load balancer
+        self._use_lb = use_lb  # Using HTTPS load balancer
         self.use_auth = use_auth  # Using token auth
+
+    @property
+    def use_lb(self) -> bool:
+        return self._use_lb
+
+    @use_lb.setter
+    def use_lb(self, value: bool):
+        """Set use_lb and clear cached base_url"""
+        self._use_lb = value
+        self._base_url = None  # Clear cache so base_url recomputes
 
     @property
     def base_url(self) -> str:
@@ -743,20 +889,407 @@ class ComfyUIJob(BaseJob):
                 return resp.json().get("name", filename)
 
     def upload_audio(self, file_path: str | Path, filename: str = None) -> str:
-        """Upload audio to ComfyUI server, returns server filename"""
+        """Upload audio to ComfyUI server, returns server filename.
+
+        Note: ComfyUI doesn't have a dedicated /upload/audio endpoint,
+        so we use /upload/image which accepts any file type.
+        """
         file_path = Path(file_path)
         filename = filename or file_path.name
 
         with httpx.Client(timeout=60) as client:
             with open(file_path, "rb") as f:
-                files = {"audio": (filename, f, "audio/mpeg")}
+                # Use /upload/image - it accepts any file type despite the name
+                files = {"image": (filename, f, "audio/mpeg")}
                 resp = client.post(
-                    f"{self.base_url}/upload/audio",
+                    f"{self.base_url}/upload/image",
                     files=files,
                     headers=self.auth_headers,
                 )
                 resp.raise_for_status()
                 return resp.json().get("name", filename)
+
+    # =========================================================================
+    # ComfyUI Manager - Custom Node Installation
+    # =========================================================================
+
+    def _comfy_request(self, method: str, path: str, **kwargs) -> httpx.Response:
+        """Make a request to ComfyUI with retry logic for transient errors."""
+        from c3.http import request_with_retry
+        return request_with_retry(
+            method,
+            f"{self.base_url}{path}",
+            headers=self.auth_headers,
+            **kwargs,
+        )
+
+    def get_available_node_types(self) -> set[str]:
+        """Get set of available node class_types from ComfyUI's /object_info.
+
+        Returns set of class_type strings that ComfyUI can currently execute.
+        """
+        resp = self._comfy_request("get", "/object_info", timeout=60)
+        resp.raise_for_status()
+        return set(resp.json().keys())
+
+    def get_workflow_node_types(self, workflow: dict) -> set[str]:
+        """Extract all class_type values from a workflow.
+
+        Args:
+            workflow: ComfyUI workflow dict (API format or UI format)
+
+        Returns:
+            Set of class_type strings used in the workflow
+        """
+        class_types = set()
+
+        # UI format: {"nodes": [{"type": "..."}, ...]}
+        if "nodes" in workflow:
+            for node in workflow.get("nodes", []):
+                if "type" in node:
+                    class_types.add(node["type"])
+
+        # API format: {"1": {"class_type": "..."}, ...}
+        else:
+            for node_id, node_data in workflow.items():
+                if isinstance(node_data, dict) and "class_type" in node_data:
+                    class_types.add(node_data["class_type"])
+
+        return class_types
+
+    def get_missing_node_types(self, workflow: dict) -> set[str]:
+        """Find node types in workflow that aren't available in ComfyUI.
+
+        Args:
+            workflow: ComfyUI workflow dict
+
+        Returns:
+            Set of class_type strings that are missing
+        """
+        available = self.get_available_node_types()
+        required = self.get_workflow_node_types(workflow)
+        return required - available
+
+    def get_node_mappings(self) -> dict[str, list]:
+        """Get node class_type to package mappings from ComfyUI Manager.
+
+        Returns:
+            Dict mapping package URL to [node_list, metadata]
+        """
+        resp = self._comfy_request("get", "/customnode/getmappings", timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+    def lookup_packages_for_nodes(self, node_types: set[str]) -> dict[str, list[str]]:
+        """Look up which packages provide given node types.
+
+        Args:
+            node_types: Set of class_type strings to look up
+
+        Returns:
+            Dict mapping package URL to list of node types it provides
+        """
+        mappings = self.get_node_mappings()
+
+        # Invert the mapping: node_type -> package_url
+        node_to_package = {}
+        for url, data in mappings.items():
+            if isinstance(data, list) and len(data) > 0:
+                node_list = data[0]
+                for node in node_list:
+                    node_to_package[node] = url
+
+        # Group requested nodes by package
+        packages: dict[str, list[str]] = {}
+        for node_type in node_types:
+            pkg = node_to_package.get(node_type)
+            if pkg:
+                if pkg not in packages:
+                    packages[pkg] = []
+                packages[pkg].append(node_type)
+
+        return packages
+
+    def get_custom_node_list(self) -> dict:
+        """Get full list of available custom node packages.
+
+        Returns:
+            Dict with 'channel' and 'node_packs' containing package metadata
+        """
+        resp = self._comfy_request("get", "/customnode/getlist", params={"skip_update": "true"}, timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+    def install_packages_by_url(self, package_urls: list[str]) -> dict:
+        """Install custom node packages by their repository URLs.
+
+        Args:
+            package_urls: List of package URLs (e.g., github repo URLs)
+
+        Returns:
+            Dict with 'queued' and 'failed' lists
+        """
+        results = {"queued": [], "failed": [], "not_found": []}
+
+        # Get full package list to find metadata
+        pkg_list = self.get_custom_node_list()
+        node_packs = pkg_list.get("node_packs", {})
+
+        # Build URL to package metadata mapping
+        url_to_metadata = {}
+        for pkg_id, metadata in node_packs.items():
+            files = metadata.get("files", [])
+            for url in files:
+                url_to_metadata[url] = metadata
+
+        with httpx.Client(timeout=60) as client:
+            for url in package_urls:
+                metadata = url_to_metadata.get(url)
+                if not metadata:
+                    results["not_found"].append(url)
+                    continue
+
+                resp = client.post(
+                    f"{self.base_url}/manager/queue/install",
+                    json=metadata,
+                    headers=self.auth_headers,
+                )
+                if resp.status_code in (200, 201):
+                    results["queued"].append(metadata.get("title", url))
+                else:
+                    results["failed"].append(metadata.get("title", url))
+
+            # Start processing if we queued anything
+            if results["queued"]:
+                client.get(
+                    f"{self.base_url}/manager/queue/start",
+                    headers=self.auth_headers,
+                )
+
+        return results
+
+    def auto_install_workflow_nodes(
+        self, workflow: dict, wait: bool = True, reboot: bool = True
+    ) -> dict:
+        """Automatically install missing custom nodes for a workflow.
+
+        Args:
+            workflow: ComfyUI workflow dict
+            wait: Wait for installation to complete
+            reboot: Reboot ComfyUI after installation
+
+        Returns:
+            Dict with results: {
+                'missing_nodes': [...],
+                'packages_to_install': {...},
+                'installed': [...],
+                'failed': [...],
+                'not_found_nodes': [...]
+            }
+        """
+        results = {
+            "missing_nodes": [],
+            "packages_to_install": {},
+            "installed": [],
+            "failed": [],
+            "not_found_nodes": [],
+        }
+
+        # Find missing node types
+        missing = self.get_missing_node_types(workflow)
+        if not missing:
+            return results
+        results["missing_nodes"] = list(missing)
+
+        # Look up packages that provide these nodes
+        packages = self.lookup_packages_for_nodes(missing)
+        results["packages_to_install"] = packages
+
+        # Track nodes we couldn't find packages for
+        found_nodes = set()
+        for nodes in packages.values():
+            found_nodes.update(nodes)
+        results["not_found_nodes"] = list(missing - found_nodes)
+
+        if not packages:
+            return results
+
+        # Install the packages
+        install_result = self.install_packages_by_url(list(packages.keys()))
+        results["installed"] = install_result.get("queued", [])
+        results["failed"] = install_result.get("failed", [])
+        results["failed"].extend(install_result.get("not_found", []))
+
+        # Wait for installation
+        if wait and results["installed"]:
+            with httpx.Client(timeout=60) as client:
+                for _ in range(180):  # Max 3 minutes
+                    time.sleep(1)
+                    resp = client.get(
+                        f"{self.base_url}/manager/queue/status",
+                        headers=self.auth_headers,
+                    )
+                    if resp.status_code == 200:
+                        status = resp.json()
+                        if not status.get("is_processing", False):
+                            break
+
+        # Reboot if we installed anything
+        if reboot and results["installed"]:
+            self.reboot(wait_ready=True)
+
+        return results
+
+    def get_installed_nodes(self) -> dict:
+        """Get list of installed custom nodes from ComfyUI Manager.
+
+        Returns dict mapping node package name to metadata.
+        """
+        with httpx.Client(timeout=30) as client:
+            resp = client.get(
+                f"{self.base_url}/customnode/installed",
+                headers=self.auth_headers,
+            )
+            resp.raise_for_status()
+            return resp.json()
+
+    def install_node(self, node_name: str) -> bool:
+        """Install a custom node package via ComfyUI Manager.
+
+        Args:
+            node_name: Package name (e.g., "comfyui-videohelpersuite")
+
+        Returns:
+            True if installation was queued successfully
+        """
+        with httpx.Client(timeout=60) as client:
+            # Queue the installation
+            resp = client.post(
+                f"{self.base_url}/manager/queue/install",
+                json={"name": node_name},
+                headers=self.auth_headers,
+            )
+            if resp.status_code not in (200, 201):
+                return False
+
+            # Start processing the queue
+            resp = client.get(
+                f"{self.base_url}/manager/queue/start",
+                headers=self.auth_headers,
+            )
+            return resp.status_code in (200, 201)
+
+    def install_nodes(self, node_names: list[str], wait: bool = True) -> dict:
+        """Install multiple custom node packages.
+
+        Args:
+            node_names: List of package names to install
+            wait: If True, wait for installation to complete
+
+        Returns:
+            Dict with installation results
+        """
+        results = {"queued": [], "failed": []}
+
+        with httpx.Client(timeout=60) as client:
+            # Queue all installations
+            for name in node_names:
+                resp = client.post(
+                    f"{self.base_url}/manager/queue/install",
+                    json={"name": name},
+                    headers=self.auth_headers,
+                )
+                if resp.status_code in (200, 201):
+                    results["queued"].append(name)
+                else:
+                    results["failed"].append(name)
+
+            if not results["queued"]:
+                return results
+
+            # Start processing
+            client.get(
+                f"{self.base_url}/manager/queue/start",
+                headers=self.auth_headers,
+            )
+
+            # Wait for completion if requested
+            if wait:
+                for _ in range(120):  # Max 2 minutes
+                    time.sleep(1)
+                    resp = client.get(
+                        f"{self.base_url}/manager/queue/status",
+                        headers=self.auth_headers,
+                    )
+                    if resp.status_code == 200:
+                        status = resp.json()
+                        if not status.get("is_processing", False):
+                            break
+
+        return results
+
+    def reboot(self, wait_ready: bool = True, timeout: int = 120) -> bool:
+        """Reboot ComfyUI server (required after installing nodes).
+
+        Args:
+            wait_ready: If True, wait for server to come back up
+            timeout: Max seconds to wait for server
+
+        Returns:
+            True if reboot was successful
+        """
+        with httpx.Client(timeout=10) as client:
+            try:
+                resp = client.get(
+                    f"{self.base_url}/manager/reboot",
+                    headers=self.auth_headers,
+                )
+                # Server may not respond as it's rebooting
+            except (httpx.ConnectError, httpx.ReadTimeout):
+                pass  # Expected - server is rebooting
+
+        if wait_ready:
+            # Wait a moment for server to start shutting down
+            time.sleep(3)
+            return self.wait_ready(timeout=timeout)
+
+        return True
+
+    def ensure_nodes_installed(self, node_names: list[str]) -> dict:
+        """Ensure custom nodes are installed, installing missing ones.
+
+        Args:
+            node_names: List of required node package names
+
+        Returns:
+            Dict with results: {"already_installed": [...], "installed": [...], "failed": [...]}
+        """
+        results = {"already_installed": [], "installed": [], "failed": []}
+
+        # Get currently installed nodes
+        try:
+            installed = self.get_installed_nodes()
+            installed_names = set(installed.keys()) if isinstance(installed, dict) else set()
+        except Exception:
+            installed_names = set()
+
+        # Find missing nodes
+        missing = [n for n in node_names if n not in installed_names]
+        results["already_installed"] = [n for n in node_names if n in installed_names]
+
+        if not missing:
+            return results
+
+        # Install missing nodes
+        install_result = self.install_nodes(missing, wait=True)
+        results["installed"] = install_result.get("queued", [])
+        results["failed"] = install_result.get("failed", [])
+
+        # Reboot if we installed anything
+        if results["installed"]:
+            self.reboot(wait_ready=True)
+
+        return results
 
     def queue_prompt(self, workflow: dict, retries: int = 5) -> str:
         """Submit workflow to ComfyUI, returns prompt_id.
@@ -803,7 +1336,7 @@ class ComfyUIJob(BaseJob):
                     resp.raise_for_status()
                     data = resp.json()
                     return data.get(prompt_id)
-            except (httpx.ConnectError, httpx.ReadTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ProxyError) as e:
                 last_error = e
                 if attempt < retries - 1:
                     time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s, 8s
@@ -828,7 +1361,7 @@ class ComfyUIJob(BaseJob):
                         return history
                     if status.get("status_str") == "error":
                         raise RuntimeError(f"Workflow execution failed: {status}")
-            except (httpx.ConnectError, httpx.ReadTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ProxyError) as e:
                 consecutive_errors += 1
                 if consecutive_errors >= max_consecutive_errors:
                     raise RuntimeError(
@@ -876,7 +1409,7 @@ class ComfyUIJob(BaseJob):
                     with open(output_path, "wb") as f:
                         f.write(resp.content)
                     return output_path
-            except (httpx.ConnectError, httpx.ReadTimeout) as e:
+            except (httpx.ConnectError, httpx.ReadTimeout, httpx.ProxyError) as e:
                 if attempt < retries - 1:
                     time.sleep(2 ** attempt)
                     continue
@@ -933,10 +1466,12 @@ class ComfyUIJob(BaseJob):
         return self.run(workflow, timeout=timeout, convert=False)
 
     def get_output_images(self, history: dict) -> list[dict]:
-        """Extract output image info from history entry"""
-        images = []
+        """Extract output file info from history entry (images, videos, gifs)"""
+        outputs = []
         for node_id, node_output in history.get("outputs", {}).items():
-            if "images" in node_output:
-                for img in node_output["images"]:
-                    images.append(img)
-        return images
+            # Check for images, videos, gifs
+            for key in ["images", "videos", "gifs"]:
+                if key in node_output:
+                    for item in node_output[key]:
+                        outputs.append(item)
+        return outputs

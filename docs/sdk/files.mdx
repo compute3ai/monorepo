@@ -1,0 +1,110 @@
+---
+title: Files
+description: Upload files for use in renders
+---
+
+Upload images, audio, and video files to use in render workflows.
+
+## Upload File
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+# Upload a local file
+file = c3.files.upload("./face.png")
+
+print(f"File ID: {file.id}")
+print(f"URL: {file.url}")  # s3://bucket/key - for use in renders
+```
+
+The returned URL is an S3 reference that can be passed to render methods.
+
+### From Bytes
+
+```python
+# Upload from bytes
+file = c3.files.upload_bytes(
+    content=image_bytes,
+    filename="generated.png",
+    content_type="image/png"
+)
+```
+
+### Supported Types
+
+| Type | Extensions | Content Types |
+|------|------------|---------------|
+| Images | .png, .jpg, .jpeg, .webp, .gif | image/png, image/jpeg, image/webp, image/gif |
+| Audio | .mp3, .wav | audio/mpeg, audio/wav, audio/mp3, audio/x-wav |
+| Video | .mp4, .webm | video/mp4, video/webm |
+
+Max file size: 100MB
+
+## Use with Renders
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+# Upload files
+face = c3.files.upload("./face.png")
+audio = c3.files.upload("./speech.wav")
+
+# Use in render flow
+render = c3.renders.speaking_video(
+    prompt="A person speaking naturally",
+    image_url=face.url,
+    audio_url=audio.url,
+)
+
+# Poll for completion
+while render.state not in ("completed", "failed"):
+    render = c3.renders.get(render.render_id)
+    time.sleep(2)
+
+print(render.result_url)
+```
+
+## List Files
+
+```python
+files = c3.files.list()
+
+for f in files:
+    print(f"{f.filename}: {f.file_size} bytes")
+```
+
+### List Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | int | 50 | Max results (1-100) |
+| `offset` | int | 0 | Pagination offset |
+
+## Get File
+
+```python
+file = c3.files.get("file-uuid")
+print(f"URL: {file.url}")
+```
+
+## Delete File
+
+```python
+c3.files.delete("file-uuid")
+```
+
+## File Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | str | File UUID |
+| `user_id` | str | Owner user ID |
+| `filename` | str | Original filename |
+| `content_type` | str | MIME type |
+| `file_size` | int | Size in bytes |
+| `url` | str | S3 reference URL (for renders) |
+| `created_at` | datetime | Upload timestamp |

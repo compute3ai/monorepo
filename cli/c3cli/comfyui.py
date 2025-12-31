@@ -7,7 +7,7 @@ from typing import Optional
 
 import typer
 
-from c3 import C3, ComfyUIJob, APIError, apply_params, load_template, graph_to_api
+from c3 import C3, ComfyUIJob, APIError, apply_params, apply_graph_modes, load_template, graph_to_api
 from .output import console, error, success, spinner
 from .tui import JobStatus, run_job_monitor
 
@@ -68,7 +68,32 @@ def _run_workflow(
             history=["ComfyUI ready", f"Loaded template: {template}"],
         ))
 
-        workflow = job.convert_workflow(graph)
+        # Apply node mode changes (enable/disable) before conversion
+        if "nodes" in params:
+            nodes_with_modes = {
+                nid: cfg for nid, cfg in params["nodes"].items()
+                if "enabled" in cfg or "mode" in cfg
+            }
+            if nodes_with_modes:
+                apply_graph_modes(graph, nodes_with_modes)
+
+        # Use graph_to_api directly without live object_info - matches test script behavior
+        workflow = graph_to_api(graph)
+
+        # Upload images referenced in nodes param
+        if "nodes" in params:
+            nodes_dict = params["nodes"]
+            for node_id, node_params in nodes_dict.items():
+                if "image" in node_params:
+                    image_path = node_params["image"]
+                    if Path(image_path).exists():
+                        status_q.put(JobStatus(
+                            stage="Uploading",
+                            message=f"Uploading {Path(image_path).name}...",
+                            history=["ComfyUI ready", f"Loaded: {template}", "Workflow converted"],
+                        ))
+                        uploaded_name = job.upload_image(image_path)
+                        node_params["image"] = uploaded_name
 
         # Apply params using type-based node lookup
         apply_params(workflow, **params)
@@ -189,8 +214,8 @@ def run(
     height: int = typer.Option(1328, "--height", "-H", help="Image height"),
     seed: Optional[int] = typer.Option(None, "--seed", "-s", help="Random seed (increments with --num)"),
     random_seed: bool = typer.Option(False, "--random", "-r", help="Use random seed for each image"),
-    steps: int = typer.Option(20, "--steps", help="Sampling steps"),
-    cfg: float = typer.Option(2.5, "--cfg", help="CFG scale"),
+    steps: Optional[int] = typer.Option(None, "--steps", help="Sampling steps (default: use workflow value)"),
+    cfg: Optional[float] = typer.Option(None, "--cfg", help="CFG scale (default: use workflow value)"),
     gpu_type: str = typer.Option("l40s", "--gpu", help="GPU type (e.g., l40s, a100, h100)"),
     gpu_count: int = typer.Option(1, "--count", help="Number of GPUs"),
     interruptible: bool = typer.Option(True, "--interruptible/--on-demand", help="Use interruptible instances"),
@@ -205,6 +230,9 @@ def run(
     stdout: bool = typer.Option(False, "--stdout", help="Output to stdout instead of TUI"),
     debug: bool = typer.Option(False, "--debug", help="Debug mode: stdout + verbose errors"),
     workflow_json: bool = typer.Option(False, "--workflow-json", help="Output generated workflow JSON and exit (don't run)"),
+    nodes: Optional[str] = typer.Option(None, "--nodes", help="Node-specific params as JSON: '{\"node_id\": {\"image\": \"file.png\"}}'"),
+    install_nodes: Optional[str] = typer.Option(None, "--install-nodes", help="Custom nodes to install (comma-separated): 'comfyui-humo,comfyui-videohelpersuite'"),
+    auto_install_nodes: bool = typer.Option(False, "--auto-install-nodes", help="Auto-detect and install missing custom nodes from workflow"),
 ):
     """Run a ComfyUI workflow template"""
 
@@ -225,15 +253,34 @@ def run(
             "negative": negative,
             "width": width,
             "height": height,
-            "steps": steps,
-            "cfg": cfg,
             "filename_prefix": output,
         }
+        # Only override steps/cfg if explicitly set (not None)
+        if steps is not None:
+            params["steps"] = steps
+        if cfg is not None:
+            params["cfg"] = cfg
         if iteration_seed is not None:
             params["seed"] = iteration_seed
+        if nodes:
+            try:
+                params["nodes"] = json_module.loads(nodes)
+            except json_module.JSONDecodeError as e:
+                error(f"Invalid JSON for --nodes: {e}")
+                raise typer.Exit(1)
 
         try:
             graph = load_template(template)
+
+            # Apply node mode changes (enable/disable) before conversion
+            if "nodes" in params:
+                nodes_with_modes = {
+                    nid: cfg for nid, cfg in params["nodes"].items()
+                    if "enabled" in cfg or "mode" in cfg
+                }
+                if nodes_with_modes:
+                    apply_graph_modes(graph, nodes_with_modes)
+
             workflow = graph_to_api(graph, debug=debug)
             apply_params(workflow, **params)
 
@@ -285,6 +332,69 @@ def run(
     if job.use_lb:
         console.print(f"URL: [cyan]{job.base_url}[/cyan] (HTTPS + {'auth' if job.use_auth else 'no auth'})")
 
+    # Install custom nodes if requested
+    if install_nodes:
+        node_list = [n.strip() for n in install_nodes.split(",") if n.strip()]
+        if node_list:
+            with spinner(f"Installing custom nodes: {', '.join(node_list)}..."):
+                # Wait for ComfyUI to be ready first
+                if not job.wait_ready(timeout=300):
+                    error("ComfyUI failed to start")
+                    raise typer.Exit(1)
+
+                try:
+                    result = job.ensure_nodes_installed(node_list)
+                    if result.get("installed"):
+                        console.print(f"[green]Installed:[/green] {', '.join(result['installed'])}")
+                    if result.get("already_installed"):
+                        console.print(f"[dim]Already installed:[/dim] {', '.join(result['already_installed'])}")
+                    if result.get("failed"):
+                        console.print(f"[yellow]Failed to install:[/yellow] {', '.join(result['failed'])}")
+                except Exception as e:
+                    error(f"Failed to install nodes: {e}")
+                    if debug:
+                        import traceback
+                        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                    raise typer.Exit(1)
+
+    # Auto-install missing nodes from workflow
+    if auto_install_nodes:
+        with spinner("Checking for missing custom nodes..."):
+            # Wait for ComfyUI to be ready first
+            if not job.wait_ready(timeout=300):
+                error("ComfyUI failed to start")
+                raise typer.Exit(1)
+
+            try:
+                # Load the workflow template
+                graph = load_template(template)
+                workflow = graph_to_api(graph, debug=debug)
+
+                result = job.auto_install_workflow_nodes(workflow)
+
+                if result.get("missing_nodes"):
+                    console.print(f"[yellow]Missing nodes:[/yellow] {', '.join(result['missing_nodes'])}")
+
+                if result.get("installed"):
+                    console.print(f"[green]Installed packages:[/green] {', '.join(result['installed'])}")
+                if result.get("failed"):
+                    console.print(f"[red]Failed to install:[/red] {', '.join(result['failed'])}")
+                if result.get("not_found_nodes"):
+                    console.print(f"[yellow]Nodes not found in registry:[/yellow] {', '.join(result['not_found_nodes'])}")
+
+                if not result.get("missing_nodes"):
+                    console.print("[dim]All required nodes already available[/dim]")
+
+            except ImportError as e:
+                error(str(e))
+                raise typer.Exit(1)
+            except Exception as e:
+                error(f"Failed to auto-install nodes: {e}")
+                if debug:
+                    import traceback
+                    console.print(f"[dim]{traceback.format_exc()}[/dim]")
+                raise typer.Exit(1)
+
     # Run workflow(s)
     for i in range(num):
         # Build params for this iteration
@@ -307,12 +417,22 @@ def run(
             "negative": negative,
             "width": width,
             "height": height,
-            "steps": steps,
-            "cfg": cfg,
             "filename_prefix": iteration_prefix,
         }
+        # Only override steps/cfg if explicitly set (not None)
+        if steps is not None:
+            params["steps"] = steps
+        if cfg is not None:
+            params["cfg"] = cfg
         if iteration_seed is not None:
             params["seed"] = iteration_seed
+        if nodes:
+            import json as json_module
+            try:
+                params["nodes"] = json_module.loads(nodes)
+            except json_module.JSONDecodeError as e:
+                error(f"Invalid JSON for --nodes: {e}")
+                raise typer.Exit(1)
 
         if num > 1:
             seed_info = f"seed: {iteration_seed}" if iteration_seed else "default seed"
@@ -366,9 +486,35 @@ def _run_simple(job: ComfyUIJob, template: str, params: dict, timeout: int, outp
             console.print(f"[dim]Debug: Loading template {template}...[/dim]")
         graph = job.load_template(template)
 
+        # Apply node mode changes (enable/disable) before conversion
+        if "nodes" in params:
+            nodes_with_modes = {
+                nid: cfg for nid, cfg in params["nodes"].items()
+                if "enabled" in cfg or "mode" in cfg
+            }
+            if nodes_with_modes:
+                if debug:
+                    console.print(f"[dim]Debug: Applying node modes: {nodes_with_modes}[/dim]")
+                apply_graph_modes(graph, nodes_with_modes)
+
         if debug:
-            console.print(f"[dim]Debug: Converting workflow...[/dim]")
-        workflow = job.convert_workflow(graph, debug=debug)
+            console.print(f"[dim]Debug: Converting workflow (using DEFAULT_OBJECT_INFO)...[/dim]")
+        # Use graph_to_api directly without live object_info - matches test script behavior
+        workflow = graph_to_api(graph, debug=debug)
+
+        # Upload images referenced in nodes param
+        if "nodes" in params:
+            nodes_dict = params["nodes"]
+            for node_id, node_params in nodes_dict.items():
+                if "image" in node_params:
+                    image_path = node_params["image"]
+                    # Check if it's a local file path
+                    if Path(image_path).exists():
+                        if debug:
+                            console.print(f"[dim]Debug: Uploading image {image_path}...[/dim]")
+                        uploaded_name = job.upload_image(image_path)
+                        node_params["image"] = uploaded_name
+                        console.print(f"Uploaded: [cyan]{image_path}[/cyan] -> [green]{uploaded_name}[/green]")
 
         # Apply params using type-based node lookup
         apply_params(workflow, **params)
@@ -376,6 +522,10 @@ def _run_simple(job: ComfyUIJob, template: str, params: dict, timeout: int, outp
         if debug:
             import json
             console.print(f"[dim]Debug: Workflow nodes: {list(workflow.keys())}[/dim]")
+            # Dump key nodes for debugging
+            for node_id in ["85", "86", "97", "98"]:
+                if node_id in workflow:
+                    console.print(f"[dim]Debug: Node {node_id} ({workflow[node_id].get('class_type')}): {json.dumps(workflow[node_id], indent=2)}[/dim]")
             console.print(f"[dim]Debug: Submitting to {job.base_url}/prompt[/dim]")
 
         with spinner("Running workflow..."):
@@ -439,6 +589,89 @@ def templates():
         for tid in sorted(ids):
             console.print(f"  {tid}")
         console.print()
+
+
+@app.command("show")
+def show(
+    template: str = typer.Argument(..., help="Template ID to show"),
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output full JSON"),
+    api_format: bool = typer.Option(False, "--api", "-a", help="Show API format (what gets sent to ComfyUI)"),
+):
+    """Show template structure and key nodes"""
+    import json as json_module
+
+    try:
+        graph = load_template(template)
+    except ImportError as e:
+        error(str(e))
+        raise typer.Exit(1)
+
+    if json_output:
+        print(json_module.dumps(graph, indent=2))
+        raise typer.Exit(0)
+
+    if api_format:
+        workflow = graph_to_api(graph)
+        print(json_module.dumps(workflow, indent=2))
+        raise typer.Exit(0)
+
+    # Show summary
+    console.print(f"[bold]Template:[/bold] {template}\n")
+
+    nodes = graph.get("nodes", [])
+    console.print(f"[bold]Nodes:[/bold] {len(nodes)} total\n")
+
+    # Group by type
+    by_type: dict[str, list] = {}
+    for node in nodes:
+        node_type = node.get("type", "unknown")
+        if node_type not in by_type:
+            by_type[node_type] = []
+        by_type[node_type].append(node)
+
+    # Show LoadImage nodes first (important for input)
+    if "LoadImage" in by_type:
+        console.print("[bold cyan]LoadImage nodes (inputs):[/bold cyan]")
+        for node in by_type["LoadImage"]:
+            node_id = node.get("id")
+            title = node.get("title", "")
+            widgets = node.get("widgets_values", [])
+            mode = node.get("mode", 0)  # 0=active, 2=muted, 4=bypassed
+            status = ""
+            if mode == 2:
+                status = " [dim](muted)[/dim]"
+            elif mode == 4:
+                status = " [dim](bypassed)[/dim]"
+            filename = widgets[0] if widgets else "none"
+            console.print(f"  Node {node_id}: {filename}{status}")
+        console.print()
+
+    # Show KSampler nodes (sampling params)
+    sampler_types = ["KSampler", "KSamplerAdvanced"]
+    for st in sampler_types:
+        if st in by_type:
+            console.print(f"[bold cyan]{st} nodes:[/bold cyan]")
+            for node in by_type[st]:
+                node_id = node.get("id")
+                widgets = node.get("widgets_values", [])
+                console.print(f"  Node {node_id}: widgets={widgets}")
+            console.print()
+
+    # Show SaveImage nodes (outputs)
+    if "SaveImage" in by_type:
+        console.print("[bold cyan]SaveImage nodes (outputs):[/bold cyan]")
+        for node in by_type["SaveImage"]:
+            node_id = node.get("id")
+            widgets = node.get("widgets_values", [])
+            prefix = widgets[0] if widgets else "ComfyUI"
+            console.print(f"  Node {node_id}: prefix={prefix}")
+        console.print()
+
+    # Show all node types
+    console.print("[bold]All node types:[/bold]")
+    for node_type in sorted(by_type.keys()):
+        count = len(by_type[node_type])
+        console.print(f"  {node_type}: {count}")
 
 
 @app.command("status")

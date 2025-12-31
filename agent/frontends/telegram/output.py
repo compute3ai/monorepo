@@ -127,14 +127,15 @@ class TelegramOutput:
 
         return self.response_msg
 
-    async def send_error(self, error_text: str):
-        """Send an error message."""
+    async def send_error(self, error_text: str, reply_markup=None):
+        """Send an error message with optional recovery buttons."""
         if self.response_msg is None:
-            self.response_msg = await self.send_message(f"❌ {error_text}")
+            self.response_msg = await self.send_message(f"❌ {error_text}", reply_markup=reply_markup)
         else:
             try:
-                await self.edit_message(self.response_msg, f"❌ {error_text}")
+                await self.edit_message(self.response_msg, f"❌ {error_text}", reply_markup=reply_markup)
             except Exception:
-                pass
+                # If edit fails, send a new message
+                self.response_msg = await self.send_message(f"❌ {error_text}", reply_markup=reply_markup)
 
         return self.response_msg

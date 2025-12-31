@@ -3,7 +3,150 @@ title: Renders
 description: SDK renders methods
 ---
 
-## Create Render
+## Flow Methods (Recommended)
+
+Simplified methods for common render tasks. These handle GPU selection, regions, and templates automatically.
+
+### Text to Image
+
+```python
+from c3 import C3
+
+c3 = C3()
+
+# Qwen-Image (great for text in images)
+render = c3.renders.text_to_image("a cat wearing sunglasses")
+
+# HiDream (highest quality)
+render = c3.renders.text_to_image_hidream("a mystical forest at sunset")
+```
+
+### Text to Video
+
+```python
+render = c3.renders.text_to_video("a cat walking through a garden")
+```
+
+### Image to Video
+
+Animate a still image:
+
+```python
+# Upload image first
+image = c3.files.upload("./character.png")
+
+render = c3.renders.image_to_video(
+    prompt="the character is dancing",
+    image_url=image.url,
+)
+```
+
+### Speaking Video (Lip Sync)
+
+Generate lip-synced video from image and audio:
+
+```python
+face = c3.files.upload("./face.png")
+audio = c3.files.upload("./speech.wav")
+
+# HuMo (audio-driven lip sync)
+render = c3.renders.speaking_video(
+    prompt="A person speaking to the camera",
+    image_url=face.url,
+    audio_url=audio.url,
+)
+
+# Wan 2.2 S2V (audio-driven, minute-level generation)
+render = c3.renders.speaking_video_wan(
+    prompt="The person is singing a song",
+    image_url=face.url,
+    audio_url=audio.url,
+)
+```
+
+### Image Editing
+
+Edit or transform existing images:
+
+```python
+image = c3.files.upload("./landscape.png")
+
+# HiDream E1 (single image editing)
+render = c3.renders.image_edit(
+    prompt="make it look like winter with snow",
+    image_url=image.url,
+)
+```
+
+### Image Editing with Multiple References
+
+Use multiple reference images for style transfer:
+
+```python
+subject = c3.files.upload("./subject.jpg")
+style1 = c3.files.upload("./style_ref1.jpg")
+style2 = c3.files.upload("./style_ref2.jpg")
+
+# Qwen multi-reference (up to 2 additional references)
+render = c3.renders.image_edit_multi(
+    prompt="Apply the artistic style from the references",
+    image_url=subject.url,
+    ref_urls=[style1.url, style2.url],
+)
+```
+
+### First/Last Frame Video
+
+Generate video morphing between two images:
+
+```python
+start = c3.files.upload("./start_frame.png")
+end = c3.files.upload("./end_frame.png")
+
+render = c3.renders.first_last_frame_video(
+    prompt="smooth transition from day to night",
+    start_image_url=start.url,
+    end_image_url=end.url,
+)
+```
+
+### Complete Example
+
+```python
+import time
+from c3 import C3
+
+c3 = C3()
+
+# Upload assets
+face = c3.files.upload("./face.png")
+audio = c3.files.upload("./speech.wav")
+
+# Create render
+render = c3.renders.speaking_video(
+    prompt="A person speaking naturally",
+    image_url=face.url,
+    audio_url=audio.url,
+)
+
+print(f"Render: {render.render_id}")
+
+# Poll for completion
+while render.state not in ("completed", "failed"):
+    status = c3.renders.status(render.render_id)
+    print(f"State: {status.state}")
+    time.sleep(2)
+    render = c3.renders.get(render.render_id)
+
+if render.result_url:
+    print(f"Result: {render.result_url}")
+else:
+    print(f"Error: {render.error}")
+```
+
+---
+
+## Advanced: Create Render
 
 ```python
 from c3 import C3

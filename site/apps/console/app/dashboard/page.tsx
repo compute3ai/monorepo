@@ -519,18 +519,18 @@ export default function DashboardPage() {
 
                 <div className="card bg-white p-6 rounded-lg shadow">
                   <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                    Regular Balance
+                  </h3>
+                  <p className="text-2xl font-bold text-gray-900">${balance.balance}</p>
+                </div>
+
+                <div className="card bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     Rewards Balance
                   </h3>
                   <p className={`text-2xl font-bold ${balance.rewards_balance_units < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                     ${balance.rewards_balance}
                   </p>
-                </div>
-
-                <div className="card bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    Regular Balance
-                  </h3>
-                  <p className="text-2xl font-bold text-gray-900">${balance.balance}</p>
                 </div>
               </div>
             </>

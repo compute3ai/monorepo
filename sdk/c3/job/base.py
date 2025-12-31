@@ -153,17 +153,20 @@ class BaseJob:
         if not self.base_url or self.job.state != "running":
             return False
         try:
-            with httpx.Client(timeout=self.HEALTH_TIMEOUT) as client:
-                resp = client.get(
-                    f"{self.base_url}{self.HEALTH_ENDPOINT}",
-                    headers=self.auth_headers,
-                )
-                return resp.status_code == 200
+            from c3.http import request_with_retry
+            resp = request_with_retry(
+                "get",
+                f"{self.base_url}{self.HEALTH_ENDPOINT}",
+                headers=self.auth_headers,
+                timeout=self.HEALTH_TIMEOUT,
+                retries=3,
+            )
+            return resp.status_code == 200
         except Exception:
             return False
 
     def wait_ready(
-        self, timeout: float = 300, poll_interval: float = 10
+        self, timeout: float = 300, poll_interval: float = 5
     ) -> bool:
         """Wait for job to be ready (running state + health check passing).
 
@@ -172,17 +175,26 @@ class BaseJob:
         """
         start = time.time()
 
-        # First wait for running state via API (no HTTP to hostname yet)
-        if not self.wait_for_running(timeout=timeout, poll_interval=poll_interval):
+        # Quick check: if already running with hostname, skip API polling
+        self.refresh()
+        if self.job.state == "running" and self.hostname:
+            # Already running - just check health
+            if self.check_health():
+                return True
+        elif self.job.state in ("failed", "cancelled", "completed", "terminated"):
             return False
+        else:
+            # Wait for running state via API
+            if not self.wait_for_running(timeout=timeout, poll_interval=poll_interval):
+                return False
 
-        # Now job is running, safe to check health endpoint
+        # Job is running, check health with shorter interval
         elapsed = time.time() - start
         remaining = timeout - elapsed
         while remaining > 0:
             if self.check_health():
                 return True
-            time.sleep(poll_interval)
+            time.sleep(2)  # Shorter interval for health checks
             remaining = timeout - (time.time() - start)
         return False
 

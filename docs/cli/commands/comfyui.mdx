@@ -21,6 +21,44 @@ c3 comfyui templates
 
 Shows available workflow templates organized by bundle.
 
+## Show Template
+
+```bash
+c3 comfyui show <template>
+```
+
+Displays template structure including input nodes, samplers, and outputs.
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--json` | `-j` | Output full graph JSON |
+| `--api` | `-a` | Output API format JSON (what gets sent to ComfyUI) |
+
+### Examples
+
+```bash
+# Show template summary
+c3 comfyui show image_qwen_image_edit_2511
+
+# Output:
+# Template: image_qwen_image_edit_2511
+# Nodes: 21 total
+#
+# LoadImage nodes (inputs):
+#   Node 87: wooden_chair.png (bypassed)
+#   Node 83: texture_fur.png
+#   Node 41: leather_sofa.png
+#
+# KSampler nodes:
+#   Node 65: widgets=[374470990866512, 'randomize', 20, 4, 'euler', 'simple', 1]
+# ...
+
+# Get API format for debugging
+c3 comfyui show video_wan2_2_14B_i2v --api | jq '.["97"]'
+```
+
 ## Run Workflow
 
 ```bash
@@ -66,6 +104,10 @@ c3 comfyui run flux_dev --prompt "cyberpunk city" -g h100 -r us
 | `--auth` | | Enable Bearer token auth on load balancer |
 | `--stdout` | | Output to stdout instead of TUI |
 | `--debug` | | Debug mode with verbose output |
+| `--nodes` | | Node-specific params as JSON (see below) |
+| `--workflow-json` | | Output workflow JSON and exit (no GPU) |
+| `--install-nodes` | | Custom nodes to install (comma-separated) |
+| `--auto-install-nodes` | | Auto-detect and install missing custom nodes |
 
 ### GPU Selection
 
@@ -145,6 +187,88 @@ Shows:
 - Workflow node details
 - Detailed error messages
 
+### Node-Specific Parameters
+
+Use `--nodes` to pass parameters directly to specific workflow nodes by ID:
+
+```bash
+# Image-to-video with Wan 2.2 (node 97 is LoadImage)
+c3 comfyui run video_wan2_2_14B_i2v \
+  --prompt "a dancing character" \
+  --nodes '{"97": {"image": "input.png"}, "98": {"width": 832, "height": 480, "length": 81}}' \
+  --output dance
+
+# First/last frame video (nodes 80 and 89 are LoadImage)
+c3 comfyui run video_wan2_2_14B_flf2v \
+  --prompt "smooth transition" \
+  --nodes '{"80": {"image": "start.png"}, "89": {"image": "end.png"}}' \
+  --output transition
+
+# Lip-sync video with HuMo (node 49: image, node 58: audio)
+c3 comfyui run video_humo \
+  --prompt "person speaking" \
+  --nodes '{"49": {"image": "face.png"}, "58": {"audio": "speech.wav"}}' \
+  --output talking
+```
+
+The `--nodes` option accepts JSON mapping node IDs to input values:
+- `image`: For LoadImage nodes (local paths are auto-uploaded)
+- `audio`: For LoadAudio nodes
+- `text`: For CLIPTextEncode and similar nodes
+- `enabled`: Enable a bypassed node (set to `true`)
+- `mode`: Node mode (0=active, 2=muted, 4=bypassed)
+- Any other key: Set as generic input
+
+### Enabling Bypassed Nodes
+
+Some templates have optional input nodes that are bypassed by default. Use `enabled: true` to activate them:
+
+```bash
+# Qwen Image Edit with 3 reference images
+# Use `c3 comfyui show` to see which nodes are bypassed
+c3 comfyui show image_qwen_image_edit_2509
+# Shows: Node 106 (bypassed), Node 108 (bypassed)
+
+# Enable extra input nodes
+c3 comfyui run image_qwen_image_edit_2509 \
+  --prompt "Transform the subject with these references" \
+  --nodes '{
+    "78": {"image": "main.jpg"},
+    "106": {"enabled": true, "image": "ref1.jpg"},
+    "108": {"enabled": true, "image": "ref2.jpg"}
+  }' \
+  --output edited
+```
+
+### Multi-Image Workflows
+
+The `image_qwen_image_edit_2509` and `image_qwen_image_edit_2511` templates support multiple reference images:
+
+```bash
+# 2511: Multi-reference style transfer (2 active + 1 bypassed)
+c3 comfyui run image_qwen_image_edit_2511 \
+  --prompt "Apply the texture to the subject" \
+  --nodes '{
+    "41": {"image": "subject.jpg"},
+    "83": {"image": "texture.jpg"},
+    "87": {"enabled": true, "image": "extra_ref.jpg"}
+  }' \
+  --output styled
+```
+
+### Workflow JSON Output
+
+Generate workflow JSON without running (for debugging or inspection):
+
+```bash
+# Output workflow JSON to stdout
+c3 comfyui run flux_schnell --prompt "test" --output test --workflow-json
+
+# Find node IDs for --nodes parameter
+c3 comfyui run video_humo --prompt "test" --output test --workflow-json | \
+  jq '[to_entries[] | select(.value.class_type == "LoadImage" or .value.class_type == "LoadAudio") | {id: .key, type: .value.class_type}]'
+```
+
 ### Output Modes
 
 ```bash
@@ -157,21 +281,42 @@ c3 comfyui run flux_schnell --prompt "..." --stdout
 
 ## Templates Reference
 
-### Image Templates
+### Image Generation (text-to-image)
 
 | Template | Model | Notes |
 |----------|-------|-------|
 | `flux_schnell` | Flux Schnell | Fast, 4 steps |
-| `flux_dev_full_text_to_image` | Flux Dev | High quality |
-| `sdxl_simple_example` | SDXL | Stable Diffusion XL |
-| `image_qwen_image` | Qwen | Qwen image model |
-| `image_chroma_text_to_image` | Chroma | Chroma model |
+| `image_qwen_image` | Qwen | Excellent text rendering |
+| `hidream_i1_full` | HiDream I1 | Highest quality, 50 steps |
 
-### Video Templates
+### Image Editing (requires image input)
+
+| Template | Model | LoadImage Nodes | Notes |
+|----------|-------|-----------------|-------|
+| `hidream_e1_full` | HiDream E1 | 13 | Single image |
+| `image_qwen_image_edit_2509` | Qwen Edit 2509 | 78, 106*, 108* | Up to 3 images |
+| `image_qwen_image_edit_2511` | Qwen Edit 2511 | 41, 83, 87* | Multi-reference |
+
+*Nodes marked with `*` are bypassed by default - use `{"enabled": true}` to activate.
+
+### Video Generation (text-to-video)
 
 | Template | Model | Notes |
 |----------|-------|-------|
 | `video_wan2_2_14B_t2v` | Wan 2.2 14B | Text-to-video |
-| `video_wan2.1_alpha_t2v_14B` | Wan 2.1 | Text-to-video |
 | `video_hunyuan_video_1.5_720p_t2v` | Hunyuan 1.5 | 720p video |
-| `hunyuan_video_text_to_video` | Hunyuan | Text-to-video |
+
+### Video Generation (image-to-video)
+
+| Template | Model | LoadImage Nodes |
+|----------|-------|-----------------|
+| `video_wan2_2_14B_i2v` | Wan 2.2 I2V | 97 |
+| `video_wan2_2_14B_flf2v` | Wan 2.2 FLF | 80 (start), 89 (end) |
+| `video_wan2_2_14B_animate` | Wan 2.2 Animate | (varies) |
+
+### Video Generation (with audio)
+
+| Template | Model | LoadImage | LoadAudio |
+|----------|-------|-----------|-----------|
+| `video_humo` | HuMo | 49 | 58 |
+| `video_wan2_2_14B_s2v` | Wan 2.2 S2V | (varies) | (varies) |
