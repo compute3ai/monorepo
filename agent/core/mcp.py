@@ -18,8 +18,10 @@ FLOW_RENDER_TOOLS = {
     "flow_text_to_image_hidream",
     "flow_text_to_video",
     "flow_image_to_video",
+    "flow_image_to_image",
     "flow_speaking_video",
     "flow_speaking_video_wan",
+    "flow_first_last_frame_video",
 }
 
 # Tools cache (global - same for all users, cached forever, restart bot to refresh)
@@ -27,6 +29,13 @@ _tools_cache: list[dict] | None = None
 
 # Auth params that are handled automatically by MCP transport - strip from tool schemas
 AUTH_PARAMS = {"X-API-KEY", "Authorization", "X-Api-Key"}
+
+# Tools to exclude from agent - these are handled automatically or not needed
+EXCLUDED_TOOLS = {
+    "upload_file_url",
+    "upload_file_b64",
+    "get_file",
+}
 
 
 def strip_auth_params(schema: dict) -> dict:
@@ -69,6 +78,10 @@ async def get_mcp_tools(api_key: str | None = None) -> list[dict]:
             # Convert MCP tools to OpenAI function format
             openai_tools = []
             for tool in tools:
+                # Skip excluded tools
+                if tool.name in EXCLUDED_TOOLS:
+                    continue
+
                 # Strip auth params - they're handled automatically by transport
                 params = strip_auth_params(tool.inputSchema) if tool.inputSchema else {"type": "object", "properties": {}}
 

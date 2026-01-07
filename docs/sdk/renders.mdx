@@ -19,12 +19,27 @@ render = c3.renders.text_to_image("a cat wearing sunglasses")
 
 # HiDream (highest quality)
 render = c3.renders.text_to_image_hidream("a mystical forest at sunset")
+
+# With custom dimensions and webhook
+render = c3.renders.text_to_image(
+    prompt="a landscape painting",
+    width=1920,
+    height=1080,
+    notify_url="https://myapp.com/webhook",
+)
 ```
 
 ### Text to Video
 
 ```python
 render = c3.renders.text_to_video("a cat walking through a garden")
+
+# With dimensions (must be multiples of 16)
+render = c3.renders.text_to_video(
+    prompt="ocean waves at sunset",
+    width=832,
+    height=480,
+)
 ```
 
 ### Image to Video
@@ -38,6 +53,15 @@ image = c3.files.upload("./character.png")
 render = c3.renders.image_to_video(
     prompt="the character is dancing",
     image_url=image.url,
+)
+
+# With custom dimensions (maintains aspect ratio)
+render = c3.renders.image_to_video(
+    prompt="the character is dancing",
+    image_url=image.url,
+    width=832,
+    height=480,
+    notify_url="https://myapp.com/webhook",
 )
 ```
 
@@ -61,6 +85,9 @@ render = c3.renders.speaking_video_wan(
     prompt="The person is singing a song",
     image_url=face.url,
     audio_url=audio.url,
+    width=832,
+    height=480,
+    notify_url="https://myapp.com/webhook",
 )
 ```
 
@@ -107,8 +134,20 @@ render = c3.renders.first_last_frame_video(
     prompt="smooth transition from day to night",
     start_image_url=start.url,
     end_image_url=end.url,
+    width=832,
+    height=480,
 )
 ```
+
+### Common Flow Parameters
+
+All flow methods support these optional parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `width` | int | Output width (video: must be multiple of 16) |
+| `height` | int | Output height (video: must be multiple of 16) |
+| `notify_url` | str | Webhook URL for completion notification |
 
 ### Complete Example
 

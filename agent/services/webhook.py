@@ -39,7 +39,6 @@ async def generate_witty_caption(
     model: str,
     render_id: str,
     prompt: str | None,
-    user_last_message: str | None = None,
 ) -> str:
     """Generate a witty caption for a completed render using the LLM."""
     # Late import to avoid circular dependency
@@ -51,19 +50,15 @@ async def generate_witty_caption(
         return f"Your render is ready! ({short_id})"
 
     try:
+        # Use the prompt itself for language detection - it's already in the user's language
         system_msg = (
             "You are a witty assistant. Generate a SHORT, fun caption (1-2 sentences max) "
-            "for an AI-generated image. Be playful and creative. Don't use hashtags. "
+            "for an AI-generated image/video. Be playful and creative. Don't use hashtags. "
             "Reference what was in the prompt. "
+            "IMPORTANT: Respond in the SAME language as the prompt."
         )
 
-        if user_last_message:
-            system_msg += (
-                f"\n\nIMPORTANT: Detect the language from the user's last message and respond in that SAME language. "
-                f"User's last message: \"{user_last_message}\""
-            )
-
-        user_msg = f"The user requested: \"{prompt}\"\n\nWrite a witty caption for the completed render."
+        user_msg = f"The render prompt was: \"{prompt}\"\n\nWrite a witty caption."
 
         response = await complete(api_key, model, f"{system_msg}\n\n{user_msg}")
 
@@ -156,13 +151,10 @@ async def send_telegram_notification(
                 except Exception as e:
                     logger.warning(f"Failed to fetch render details: {e}")
 
-            # Get last message for language detection
-            user_last_message = chats.get_last_user_message(user.user_id)
-
-            # Generate caption
+            # Generate caption using the render's prompt (not chat history)
             model = user.model or DEFAULT_MODEL
             if user.api_key and prompt:
-                caption = await generate_witty_caption(user.api_key, model, payload.render_id, prompt, user_last_message)
+                caption = await generate_witty_caption(user.api_key, model, payload.render_id, prompt)
             else:
                 short_id = payload.render_id[:8] if payload.render_id else "unknown"
                 caption = f"Your render is ready! ({short_id})"

@@ -429,3 +429,30 @@ def delete_message_by_telegram_id(telegram_id: int, telegram_message_id: int) ->
             session.delete(msg)
             return True
         return False
+
+
+# In-memory storage for pending tool calls (keyed by chat_id)
+# Stores a LIST of pending tools, not just one
+_pending_tools: dict[str, list[dict]] = {}
+
+
+def set_pending_tools(chat_id: str, tools: list[dict]) -> None:
+    """Store pending tool calls for a chat (replaces any existing)."""
+    _pending_tools[chat_id] = tools
+
+
+def add_pending_tool(chat_id: str, tool_data: dict) -> None:
+    """Add a pending tool call to the list for a chat."""
+    if chat_id not in _pending_tools:
+        _pending_tools[chat_id] = []
+    _pending_tools[chat_id].append(tool_data)
+
+
+def get_pending_tools(chat_id: str) -> list[dict]:
+    """Get and clear the pending tool calls for a chat."""
+    return _pending_tools.pop(chat_id, [])
+
+
+def clear_pending_tools(chat_id: str) -> None:
+    """Clear pending tool calls without returning them."""
+    _pending_tools.pop(chat_id, None)

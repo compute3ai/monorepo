@@ -38,7 +38,7 @@ def model_picker_keyboard(models: list[str], current_model: str) -> InlineKeyboa
     for model in models:
         prefix = "✓ " if model == current_model else ""
         buttons.append([InlineKeyboardButton(f"{prefix}{model}", callback_data=f"select_model:{model}")])
-    buttons.append([InlineKeyboardButton("« Back", callback_data="settings")])
+    buttons.append([InlineKeyboardButton("« Back", callback_data="back")])
     return InlineKeyboardMarkup(buttons)
 
 
@@ -55,16 +55,34 @@ def welcome_keyboard() -> InlineKeyboardMarkup:
 
 
 def renders_list_keyboard(renders: list, page_size: int = 5) -> InlineKeyboardMarkup:
+    """Build keyboard for renders list. Accepts both ORM objects and API dicts."""
     buttons = []
     if not renders:
         buttons.append([InlineKeyboardButton("No renders yet", callback_data="noop")])
     else:
-        status_emoji = {"pending": "⏳", "success": "✅", "failed": "❌", "cancelled": "🚫"}
+        # Map API states to emoji (API uses 'state', local DB uses 'status')
+        state_emoji = {
+            "pending": "⏳", "queued": "⏳", "running": "🔄",
+            "completed": "✅", "success": "✅",
+            "failed": "❌", "cancelled": "🚫",
+        }
         for render in renders[:page_size]:
-            emoji = status_emoji.get(render.status, "❓")
-            short_id = render.render_id[:8] if render.render_id else "?"
-            template = render.template or "render"
-            buttons.append([InlineKeyboardButton(f"{emoji} {template} ({short_id})", callback_data=f"render:{render.render_id}")])
+            # Support both dict (API) and ORM object formats
+            if isinstance(render, dict):
+                state = render.get("state", "unknown")
+                render_id = render.get("id", "")
+                # Try to get template from meta if available
+                meta = render.get("meta") or {}
+                template = meta.get("template") if isinstance(meta, dict) else None
+            else:
+                state = getattr(render, "status", "unknown")
+                render_id = getattr(render, "render_id", "")
+                template = getattr(render, "template", None)
+
+            emoji = state_emoji.get(state, "❓")
+            short_id = render_id[:8] if render_id else "?"
+            label = template or state or "render"
+            buttons.append([InlineKeyboardButton(f"{emoji} {label} ({short_id})", callback_data=f"render:{render_id}")])
     buttons.append([InlineKeyboardButton("« Back to Menu", callback_data="menu")])
     return InlineKeyboardMarkup(buttons)
 

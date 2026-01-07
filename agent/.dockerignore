@@ -1,8 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
 *.db
-*.pyc
-__pycache__
-.venv
+
+# Virtual environments
 venv/
+.venv/
+
+# Git
+.git/
+
+# Local config
 .env
-.git
+
+# Docs
 *.md

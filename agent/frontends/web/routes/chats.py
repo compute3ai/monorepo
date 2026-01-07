@@ -359,7 +359,8 @@ async def send_message(
 
     # Build messages for API
     webhook_secret = user.webhook_secret if user else None
-    system_prompt = build_system_prompt(webhook_secret)
+    model = data.model or (user.model if user else None) or DEFAULT_MODEL
+    system_prompt = build_system_prompt(model=model)
     chat_messages = chats.get_messages(chat_id)
 
     # Convert to API format (exclude the pending assistant message)
@@ -383,7 +384,7 @@ async def send_message(
             chat_id=chat_id,
             message_id=assistant_msg.id,
             api_key=auth.token,  # Pass JWT for backend auth
-            model=data.model or (user.model if user else None) or DEFAULT_MODEL,
+            model=model,
             messages=messages,
             notify_url=notify_url,
         )
@@ -438,7 +439,8 @@ async def send_message_stream(
 
     # Build messages for API
     webhook_secret = user.webhook_secret if user else None
-    system_prompt = build_system_prompt(webhook_secret)
+    model = data.model or (user.model if user else None) or DEFAULT_MODEL
+    system_prompt = build_system_prompt(model=model)
     chat_messages = chats.get_messages(chat_id)
 
     # Convert to API format (exclude the pending assistant message)
@@ -448,7 +450,6 @@ async def send_message_stream(
             messages.append({"role": m["role"], "content": m["content"]})
 
     notify_url = get_notify_url(webhook_secret) if webhook_secret else None
-    model = data.model or (user.model if user else None) or DEFAULT_MODEL
 
     async def generate_sse():
         """Generator that yields SSE formatted events."""

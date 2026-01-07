@@ -59,8 +59,8 @@ class BaseChatSession(ABC):
             List of messages in OpenAI format
         """
         system_prompt = build_system_prompt(
-            self.context.webhook_secret,
-            extra_instructions,
+            model=self.context.effective_model,
+            extra_instructions=extra_instructions,
         )
 
         messages = [{"role": "system", "content": system_prompt}]
