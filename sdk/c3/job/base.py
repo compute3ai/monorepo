@@ -165,28 +165,69 @@ class BaseJob:
         except Exception:
             return False
 
-    def wait_ready(
-        self, timeout: float = 300, poll_interval: float = 5
-    ) -> bool:
-        """Wait for job to be ready (running state + health check passing).
+    def wait_existing(self, timeout: float = 15) -> bool:
+        """Wait for an EXISTING running job to respond to health checks.
 
-        First waits for job to reach running state via API polling,
-        then checks health endpoint. This prevents DNS NXDOMAIN caching.
+        Use when reconnecting to a job that was already running (e.g., service restart,
+        reusing an idle instance). No DNS delay needed because the hostname was already
+        resolved previously - DNS is cached and propagated.
+
+        Args:
+            timeout: Max seconds to wait for health check (default 15s). Short because
+                     if an existing healthy job doesn't respond quickly, it's likely dead.
+
+        Returns:
+            True if job is running and healthy, False otherwise
+        """
+        self.refresh()
+        if self.job.state != "running" or not self.hostname:
+            return False
+
+        start = time.time()
+        while time.time() - start < timeout:
+            if self.check_health():
+                return True
+            time.sleep(2)
+        return False
+
+    def wait_ready(
+        self, timeout: float = 300, poll_interval: float = 5, dns_delay: float = 15.0
+    ) -> bool:
+        """Wait for a NEW job to be ready (running state + health check passing).
+
+        For newly launched jobs only. Use wait_existing() for jobs already running.
+
+        Flow:
+        1. Poll API until job state = "running" (no DNS lookups yet)
+        2. Wait dns_delay seconds for DNS to propagate
+        3. Poll health endpoint until service responds
+
+        Why dns_delay? New jobs get fresh hostnames. If we hit DNS before it propagates,
+        we get NXDOMAIN which gets cached by the resolver for ~30 minutes, breaking all
+        subsequent requests. The 15s delay lets DNS propagate first. ComfyUI takes >30s
+        to boot anyway, so this doesn't add latency.
+
+        Args:
+            timeout: Total max seconds to wait (default 300s). Includes API polling +
+                     DNS delay + health checks.
+            poll_interval: Seconds between API state checks (default 5s).
+            dns_delay: Seconds to wait after API says "running" before first DNS lookup
+                       (default 15s). Prevents NXDOMAIN caching on new hostnames.
         """
         start = time.time()
 
-        # Quick check: if already running with hostname, skip API polling
+        # Wait for running state via API (no DNS calls yet)
         self.refresh()
-        if self.job.state == "running" and self.hostname:
-            # Already running - just check health
-            if self.check_health():
-                return True
-        elif self.job.state in ("failed", "cancelled", "completed", "terminated"):
+        if self.job.state in ("failed", "cancelled", "completed", "terminated"):
             return False
-        else:
-            # Wait for running state via API
+
+        if self.job.state != "running" or not self.hostname:
             if not self.wait_for_running(timeout=timeout, poll_interval=poll_interval):
                 return False
+
+        # DNS propagation delay - wait before first hostname lookup to avoid NXDOMAIN caching
+        if dns_delay > 0:
+            time.sleep(dns_delay)
 
         # Job is running, check health with shorter interval
         elapsed = time.time() - start

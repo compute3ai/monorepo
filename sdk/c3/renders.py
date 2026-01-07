@@ -121,65 +121,112 @@ class Renders:
     # Flow endpoints - simplified interfaces
     # =========================================================================
 
-    def text_to_image(self, prompt: str) -> Render:
+    def _flow(self, endpoint: str, **kwargs) -> Render:
+        """Helper for flow endpoints. Filters None values from payload."""
+        payload = {k: v for k, v in kwargs.items() if v is not None}
+        data = self._http.post(endpoint, json=payload)
+        return Render.from_dict(data)
+
+    def text_to_image(
+        self,
+        prompt: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Generate an image using Qwen-Image (great for text in images).
 
         Args:
             prompt: Text description of the image
+            width: Optional output width
+            height: Optional output height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.text_to_image("a cat wearing sunglasses")
         """
-        data = self._http.post("/api/flow/text-to-image", json={"prompt": prompt})
-        return Render.from_dict(data)
+        return self._flow("/api/flow/text-to-image", prompt=prompt, width=width, height=height, notify_url=notify_url)
 
-    def text_to_image_hidream(self, prompt: str) -> Render:
+    def text_to_image_hidream(
+        self,
+        prompt: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Generate an image using HiDream I1 Full (highest quality).
 
         Args:
             prompt: Text description of the image
+            width: Optional output width
+            height: Optional output height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.text_to_image_hidream("a mystical forest")
         """
-        data = self._http.post("/api/flow/text-to-image-hidream", json={"prompt": prompt})
-        return Render.from_dict(data)
+        return self._flow("/api/flow/text-to-image-hidream", prompt=prompt, width=width, height=height, notify_url=notify_url)
 
-    def text_to_video(self, prompt: str) -> Render:
+    def text_to_video(
+        self,
+        prompt: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Generate a video using Wan 2.2 14B.
 
         Args:
             prompt: Text description of the video
+            width: Optional video width
+            height: Optional video height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.text_to_video("a cat walking through a garden")
         """
-        data = self._http.post("/api/flow/text-to-video", json={"prompt": prompt})
-        return Render.from_dict(data)
+        return self._flow("/api/flow/text-to-video", prompt=prompt, width=width, height=height, notify_url=notify_url)
 
-    def image_to_video(self, prompt: str, image_url: str) -> Render:
+    def image_to_video(
+        self,
+        prompt: str,
+        image_url: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Animate an image using Wan 2.2 Animate.
 
         Args:
             prompt: Description of the motion/animation
             image_url: URL of the image to animate
+            width: Optional video width
+            height: Optional video height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
-            render = c3.renders.image_to_video("dancing", "https://example.com/img.png")
+            render = c3.renders.image_to_video("dancing", "https://example.com/img.png", width=832, height=480)
         """
-        data = self._http.post(
-            "/api/flow/image-to-video",
-            json={"prompt": prompt, "image_url": image_url}
-        )
-        return Render.from_dict(data)
+        return self._flow("/api/flow/image-to-video", prompt=prompt, image_url=image_url, width=width, height=height, notify_url=notify_url)
 
-    def speaking_video(self, prompt: str, image_url: str, audio_url: str) -> Render:
+    def speaking_video(
+        self,
+        prompt: str,
+        image_url: str,
+        audio_url: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Generate a lip-sync video using HuMo.
 
         Args:
             prompt: Description of the scene/character
             image_url: URL of the face/character image
             audio_url: URL of the audio/speech file
+            width: Optional video width
+            height: Optional video height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.speaking_video(
@@ -188,19 +235,26 @@ class Renders:
                 "https://example.com/speech.mp3"
             )
         """
-        data = self._http.post(
-            "/api/flow/speaking-video",
-            json={"prompt": prompt, "image_url": image_url, "audio_url": audio_url}
-        )
-        return Render.from_dict(data)
+        return self._flow("/api/flow/speaking-video", prompt=prompt, image_url=image_url, audio_url=audio_url, width=width, height=height, notify_url=notify_url)
 
-    def speaking_video_wan(self, prompt: str, image_url: str, audio_url: str) -> Render:
+    def speaking_video_wan(
+        self,
+        prompt: str,
+        image_url: str,
+        audio_url: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
+    ) -> Render:
         """Generate an audio-driven video using Wan 2.2 S2V.
 
         Args:
             prompt: Description of the scene/action
             image_url: URL of the image
             audio_url: URL of the audio file
+            width: Optional video width
+            height: Optional video height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.speaking_video_wan(
@@ -209,22 +263,24 @@ class Renders:
                 "https://example.com/song.mp3"
             )
         """
-        data = self._http.post(
-            "/api/flow/speaking-video-wan",
-            json={"prompt": prompt, "image_url": image_url, "audio_url": audio_url}
-        )
-        return Render.from_dict(data)
+        return self._flow("/api/flow/speaking-video-wan", prompt=prompt, image_url=image_url, audio_url=audio_url, width=width, height=height, notify_url=notify_url)
 
     def image_to_image(
         self,
         prompt: str,
         image_urls: List[str],
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
     ) -> Render:
         """Transform images using Qwen Image Edit with 1-3 input images.
 
         Args:
             prompt: Description of the transformation
             image_urls: List of 1-3 image URLs (first is main, others are references)
+            width: Optional output width
+            height: Optional output height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.image_to_image(
@@ -236,20 +292,16 @@ class Renders:
                 ]
             )
         """
-        data = self._http.post(
-            "/api/flow/image-to-image",
-            json={
-                "prompt": prompt,
-                "image_urls": image_urls,
-            }
-        )
-        return Render.from_dict(data)
+        return self._flow("/api/flow/image-to-image", prompt=prompt, image_urls=image_urls, width=width, height=height, notify_url=notify_url)
 
     def first_last_frame_video(
         self,
         prompt: str,
         start_image_url: str,
         end_image_url: str,
+        width: int = None,
+        height: int = None,
+        notify_url: str = None,
     ) -> Render:
         """Generate video morphing between two images using Wan 2.2.
 
@@ -257,6 +309,9 @@ class Renders:
             prompt: Description of the transition/motion
             start_image_url: URL of the starting frame
             end_image_url: URL of the ending frame
+            width: Optional video width
+            height: Optional video height
+            notify_url: Optional webhook URL for completion notification
 
         Example:
             render = c3.renders.first_last_frame_video(
@@ -265,12 +320,4 @@ class Renders:
                 "https://example.com/night.png"
             )
         """
-        data = self._http.post(
-            "/api/flow/first-last-frame-video",
-            json={
-                "prompt": prompt,
-                "start_image_url": start_image_url,
-                "end_image_url": end_image_url,
-            }
-        )
-        return Render.from_dict(data)
+        return self._flow("/api/flow/first-last-frame-video", prompt=prompt, start_image_url=start_image_url, end_image_url=end_image_url, width=width, height=height, notify_url=notify_url)

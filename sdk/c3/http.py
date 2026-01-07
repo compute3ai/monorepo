@@ -144,3 +144,74 @@ class HTTPClient:
                 files=files,
             )
             return _handle_response(response)
+
+
+class AsyncHTTPClient:
+    """Async HTTP client for use in async contexts (e.g., Telegram bot, web servers)"""
+
+    def __init__(self, base_url: str, api_key: str, timeout: float = 30.0):
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.timeout = timeout
+
+    @property
+    def headers(self) -> dict:
+        return {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+    async def get(self, path: str, params: dict = None) -> Any:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.get(
+                f"{self.base_url}{path}",
+                headers=self.headers,
+                params=params,
+            )
+            return _handle_response(response)
+
+    async def post(self, path: str, json: dict = None) -> Any:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}{path}",
+                headers=self.headers,
+                json=json,
+            )
+            return _handle_response(response)
+
+    async def patch(self, path: str, json: dict = None) -> Any:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.patch(
+                f"{self.base_url}{path}",
+                headers=self.headers,
+                json=json,
+            )
+            return _handle_response(response)
+
+    async def delete(self, path: str) -> Any:
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.delete(
+                f"{self.base_url}{path}",
+                headers=self.headers,
+            )
+            return _handle_response(response)
+
+    async def post_multipart(self, path: str, files: dict, params: dict = None) -> Any:
+        """POST with multipart form data for file uploads.
+
+        Args:
+            path: API path
+            files: Dict of {field_name: file_tuple} where file_tuple is
+                   (filename, file_bytes, content_type) or just file_bytes
+            params: Optional query parameters
+        """
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            response = await client.post(
+                f"{self.base_url}{path}",
+                headers=headers,
+                files=files,
+                params=params,
+            )
+            return _handle_response(response)
