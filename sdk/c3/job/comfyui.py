@@ -351,23 +351,17 @@ def apply_params(workflow: dict, **params) -> dict:
     # CLIP text encode types (standard first, then variants)
     clip_types = ["CLIPTextEncode", "CLIPTextEncodeFlux", "CLIPTextEncodeSD3", "TextEncodeQwenImageEditPlus"]
 
-    # Positive prompt - with "Positive" in title, or first CLIP encoder
+    # Positive prompt - find by "Positive" in title
     if "prompt" in params:
-        # For TextEncodeQwenImageEditPlus, find the one with non-empty prompt (positive)
-        qwen_nodes = find_nodes(workflow, "TextEncodeQwenImageEditPlus")
-        if qwen_nodes:
-            # The node with non-empty prompt is the positive one
-            for node_id, node in qwen_nodes:
-                if node["inputs"].get("prompt", "").strip():
-                    node["inputs"]["prompt"] = params["prompt"]
-                    break
-            else:
-                # Fallback: set on first node
-                qwen_nodes[0][1]["inputs"]["prompt"] = params["prompt"]
+        # Try TextEncodeQwenImageEditPlus first (Qwen workflows use "prompt" field)
+        node_id, node = find_node(workflow, "TextEncodeQwenImageEditPlus", "Positive")
+        if node:
+            node["inputs"]["prompt"] = params["prompt"]
         else:
-            # Standard CLIP encoders - find by title or use first
+            # Standard CLIP encoders (use "text" field)
             node_id, node = find_first(clip_types, "Positive")
             if not node:
+                # Fallback: find any CLIP encoder
                 for t in clip_types:
                     nodes = find_nodes(workflow, t)
                     if nodes:
@@ -376,16 +370,14 @@ def apply_params(workflow: dict, **params) -> dict:
             if node:
                 node["inputs"]["text"] = params["prompt"]
 
-    # Negative prompt - with "Negative" in title, or empty Qwen encoder
+    # Negative prompt - find by "Negative" in title
     if "negative" in params:
-        qwen_nodes = find_nodes(workflow, "TextEncodeQwenImageEditPlus")
-        if qwen_nodes:
-            # The node with empty prompt is the negative one
-            for node_id, node in qwen_nodes:
-                if not node["inputs"].get("prompt", "").strip():
-                    node["inputs"]["prompt"] = params["negative"]
-                    break
+        # Try TextEncodeQwenImageEditPlus first (Qwen workflows use "prompt" field)
+        node_id, node = find_node(workflow, "TextEncodeQwenImageEditPlus", "Negative")
+        if node:
+            node["inputs"]["prompt"] = params["negative"]
         else:
+            # Standard CLIP encoders (use "text" field)
             node_id, node = find_first(clip_types, "Negative")
             if node:
                 node["inputs"]["text"] = params["negative"]

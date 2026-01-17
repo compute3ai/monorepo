@@ -130,6 +130,7 @@ class Renders:
     def text_to_image(
         self,
         prompt: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -138,6 +139,7 @@ class Renders:
 
         Args:
             prompt: Text description of the image
+            negative: Optional negative prompt (things to avoid)
             width: Optional output width
             height: Optional output height
             notify_url: Optional webhook URL for completion notification
@@ -145,11 +147,12 @@ class Renders:
         Example:
             render = c3.renders.text_to_image("a cat wearing sunglasses")
         """
-        return self._flow("/api/flow/text-to-image", prompt=prompt, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/text-to-image", prompt=prompt, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def text_to_image_hidream(
         self,
         prompt: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -158,6 +161,7 @@ class Renders:
 
         Args:
             prompt: Text description of the image
+            negative: Optional negative prompt (things to avoid)
             width: Optional output width
             height: Optional output height
             notify_url: Optional webhook URL for completion notification
@@ -165,11 +169,12 @@ class Renders:
         Example:
             render = c3.renders.text_to_image_hidream("a mystical forest")
         """
-        return self._flow("/api/flow/text-to-image-hidream", prompt=prompt, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/text-to-image-hidream", prompt=prompt, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def text_to_video(
         self,
         prompt: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -178,6 +183,7 @@ class Renders:
 
         Args:
             prompt: Text description of the video
+            negative: Optional negative prompt (things to avoid)
             width: Optional video width
             height: Optional video height
             notify_url: Optional webhook URL for completion notification
@@ -185,12 +191,13 @@ class Renders:
         Example:
             render = c3.renders.text_to_video("a cat walking through a garden")
         """
-        return self._flow("/api/flow/text-to-video", prompt=prompt, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/text-to-video", prompt=prompt, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def image_to_video(
         self,
         prompt: str,
         image_url: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -200,6 +207,7 @@ class Renders:
         Args:
             prompt: Description of the motion/animation
             image_url: URL of the image to animate
+            negative: Optional negative prompt (things to avoid)
             width: Optional video width
             height: Optional video height
             notify_url: Optional webhook URL for completion notification
@@ -207,13 +215,14 @@ class Renders:
         Example:
             render = c3.renders.image_to_video("dancing", "https://example.com/img.png", width=832, height=480)
         """
-        return self._flow("/api/flow/image-to-video", prompt=prompt, image_url=image_url, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/image-to-video", prompt=prompt, image_url=image_url, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def speaking_video(
         self,
         prompt: str,
         image_url: str,
         audio_url: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -224,6 +233,7 @@ class Renders:
             prompt: Description of the scene/character
             image_url: URL of the face/character image
             audio_url: URL of the audio/speech file
+            negative: Optional negative prompt (things to avoid)
             width: Optional video width
             height: Optional video height
             notify_url: Optional webhook URL for completion notification
@@ -235,13 +245,14 @@ class Renders:
                 "https://example.com/speech.mp3"
             )
         """
-        return self._flow("/api/flow/speaking-video", prompt=prompt, image_url=image_url, audio_url=audio_url, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/speaking-video", prompt=prompt, image_url=image_url, audio_url=audio_url, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def speaking_video_wan(
         self,
         prompt: str,
         image_url: str,
         audio_url: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -252,6 +263,7 @@ class Renders:
             prompt: Description of the scene/action
             image_url: URL of the image
             audio_url: URL of the audio file
+            negative: Optional negative prompt (things to avoid)
             width: Optional video width
             height: Optional video height
             notify_url: Optional webhook URL for completion notification
@@ -263,12 +275,13 @@ class Renders:
                 "https://example.com/song.mp3"
             )
         """
-        return self._flow("/api/flow/speaking-video-wan", prompt=prompt, image_url=image_url, audio_url=audio_url, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/speaking-video-wan", prompt=prompt, image_url=image_url, audio_url=audio_url, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def image_to_image(
         self,
         prompt: str,
         image_urls: List[str],
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -278,6 +291,7 @@ class Renders:
         Args:
             prompt: Description of the transformation
             image_urls: List of 1-3 image URLs (first is main, others are references)
+            negative: Optional negative prompt (things to avoid)
             width: Optional output width
             height: Optional output height
             notify_url: Optional webhook URL for completion notification
@@ -292,13 +306,14 @@ class Renders:
                 ]
             )
         """
-        return self._flow("/api/flow/image-to-image", prompt=prompt, image_urls=image_urls, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/image-to-image", prompt=prompt, image_urls=image_urls, negative=negative, width=width, height=height, notify_url=notify_url)
 
     def first_last_frame_video(
         self,
         prompt: str,
         start_image_url: str,
         end_image_url: str,
+        negative: str = None,
         width: int = None,
         height: int = None,
         notify_url: str = None,
@@ -309,6 +324,7 @@ class Renders:
             prompt: Description of the transition/motion
             start_image_url: URL of the starting frame
             end_image_url: URL of the ending frame
+            negative: Optional negative prompt (things to avoid)
             width: Optional video width
             height: Optional video height
             notify_url: Optional webhook URL for completion notification
@@ -320,4 +336,4 @@ class Renders:
                 "https://example.com/night.png"
             )
         """
-        return self._flow("/api/flow/first-last-frame-video", prompt=prompt, start_image_url=start_image_url, end_image_url=end_image_url, width=width, height=height, notify_url=notify_url)
+        return self._flow("/api/flow/first-last-frame-video", prompt=prompt, start_image_url=start_image_url, end_image_url=end_image_url, negative=negative, width=width, height=height, notify_url=notify_url)
