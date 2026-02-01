@@ -1,5 +1,6 @@
 """Job helpers for different GPU workload types"""
 from .base import BaseJob
+from .gradio import GradioJob
 from .comfyui import (
     ComfyUIJob,
     apply_params,
@@ -14,6 +15,7 @@ from .comfyui import (
 __all__ = [
     "BaseJob",
     "ComfyUIJob",
+    "GradioJob",
     "apply_params",
     "apply_graph_modes",
     "find_node",

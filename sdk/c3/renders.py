@@ -337,3 +337,23 @@ class Renders:
             )
         """
         return self._flow("/api/flow/first-last-frame-video", prompt=prompt, start_image_url=start_image_url, end_image_url=end_image_url, negative=negative, width=width, height=height, notify_url=notify_url)
+
+    def audio_to_text(
+        self,
+        audio_url: str,
+        notify_url: str = None,
+    ) -> Render:
+        """Transcribe audio/video to text using WhisperX.
+
+        Args:
+            audio_url: URL of the audio or video file to transcribe
+            notify_url: Optional webhook URL for completion notification
+
+        Returns:
+            Render object. When completed, result_url points to a JSON file
+            containing {"text": "transcription..."}.
+
+        Example:
+            render = c3.renders.audio_to_text("https://example.com/recording.mp3")
+        """
+        return self._flow("/api/flow/audio-to-text", audio_url=audio_url, notify_url=notify_url)
